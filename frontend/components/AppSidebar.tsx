@@ -2,22 +2,21 @@
 
 import React, { useEffect, useMemo, useRef } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
-import {
-  Sidebar, SidebarContent, SidebarFooter, SidebarGroup,
-  SidebarGroupContent, SidebarHeader, SidebarMenu,
-  SidebarMenuButton, SidebarMenuItem, SidebarRail, useSidebar
-} from '@/components/ui/sidebar'
-import {
-  DropdownMenu, DropdownMenuContent,
-  DropdownMenuItem, DropdownMenuTrigger
-} from '@/components/ui/dropdown-menu'
-import { Check, Maximize2, Minimize2, MousePointerClick, PanelLeft } from 'lucide-react'
+import { toast } from 'sonner'
+import { TenXVagasLogo } from '@/components/TenXVagasLogo'
+import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarRail, useSidebar } from '@/components/ui/sidebar'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
+import { Bookmark, Check, ChevronUp, DatabaseZap, LogOut, Maximize2, Minimize2, MousePointerClick, PanelLeft, ScanSearch, UserRound } from 'lucide-react'
+import { useAuth } from '@/hooks/useAuth'
+import { useSavedJobs } from '@/lib/savedJobsStore'
 
 type SidebarMode = 'expanded' | 'collapsed' | 'hover'
 
 const NAV_ITEMS = [
-  { href: '/', title: 'Início', icon: '🏠' },
-  { href: '/componentes', title: 'Componentes', icon: '🧩' },
+  { href: '/', title: 'Radar', icon: ScanSearch },
+  { href: '/saved', title: 'Vagas salvas', icon: Bookmark },
+  { href: '/profile', title: 'Perfil Canônico', icon: UserRound },
+  { href: '/sources', title: 'Fontes', icon: DatabaseZap },
 ]
 
 const SIDEBAR_MODE_KEY = 'sidebar-mode'
@@ -67,7 +66,9 @@ function useHydrated() {
 function AppSidebar() {
   const router    = useRouter()
   const pathname  = usePathname()
-  const { setOpen, isMobile } = useSidebar()
+  const { setOpen, setOpenMobile, isMobile } = useSidebar()
+  const { user, signOut } = useAuth()
+  const savedJobs = useSavedJobs()
 
   const hydrated = useHydrated()
   const [sidebarMode, setSidebarMode] = usePersistedSidebarMode()
@@ -108,9 +109,25 @@ function AppSidebar() {
   }, [])
 
   const appName = useMemo(
-    () => process.env['NEXT_PUBLIC_APP_NAME'] || 'Meu Projeto',
+    () => process.env['NEXT_PUBLIC_APP_NAME'] || '10xVagas',
     []
   )
+
+  const userName = typeof user?.user_metadata?.full_name === 'string'
+    ? user.user_metadata.full_name
+    : typeof user?.user_metadata?.name === 'string'
+      ? user.user_metadata.name
+      : user?.email?.split('@')[0] ?? 'Minha conta'
+
+  async function handleSignOut(): Promise<void> {
+    try {
+      await signOut()
+      router.replace('/login')
+      router.refresh()
+    } catch {
+      toast.error('Nao foi possivel sair. Tente novamente.')
+    }
+  }
 
   return (
     <Sidebar
@@ -122,9 +139,12 @@ function AppSidebar() {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg">
+              <div className="flex size-9 shrink-0 items-center justify-center border border-brand/25 bg-brand/[0.06] text-brand">
+                <TenXVagasLogo className="size-7" />
+              </div>
               <div className="grid min-w-0 flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-semibold">{appName}</span>
-                <span className="truncate text-xs text-muted-foreground">v0.1.0</span>
+                <span className="truncate text-[10px] uppercase tracking-[0.12em] text-muted-foreground">job intelligence</span>
               </div>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -138,12 +158,14 @@ function AppSidebar() {
               {NAV_ITEMS.map((item) => (
                 <SidebarMenuItem key={item.href}>
                   <SidebarMenuButton
-                    onClick={() => router.push(item.href)}
+                    aria-current={pathname === item.href ? 'page' : undefined}
+                    onClick={() => { router.push(item.href); if (isMobile) setOpenMobile(false) }}
                     isActive={pathname === item.href}
                     tooltip={item.title}
                   >
-                    <span className="text-base">{item.icon}</span>
+                    <item.icon className="size-4" />
                     <span>{item.title}</span>
+                    {item.href === '/saved' && savedJobs.jobs.length > 0 && <span className="ml-auto min-w-5 border border-sidebar-border bg-sidebar-accent px-1 text-center font-mono text-[9px] text-sidebar-foreground">{savedJobs.jobs.length}</span>}
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
@@ -154,6 +176,37 @@ function AppSidebar() {
 
       <SidebarFooter>
         <SidebarMenu>
+          <SidebarMenuItem>
+            {hydrated ? (
+              <DropdownMenu onOpenChange={handleDropdownChange}>
+                <DropdownMenuTrigger asChild>
+                  <SidebarMenuButton size="lg" className="border border-sidebar-border bg-sidebar-accent/50">
+                    <div className="flex size-8 shrink-0 items-center justify-center border border-brand/25 bg-brand/10 text-brand">
+                      <UserRound className="size-4" />
+                    </div>
+                    <div className="grid min-w-0 flex-1 text-left leading-tight">
+                      <span className="truncate text-xs font-semibold">{userName}</span>
+                      <span className="truncate text-[10px] text-muted-foreground">{user?.email ?? 'Sessao ativa'}</span>
+                    </div>
+                    <ChevronUp className="ml-auto size-3.5 text-muted-foreground" />
+                  </SidebarMenuButton>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent side="right" align="end" className="w-60">
+                  <DropdownMenuLabel className="font-normal">
+                    <span className="block truncate text-sm font-semibold">{userName}</span>
+                    <span className="block truncate text-xs text-muted-foreground">{user?.email}</span>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleSignOut}>
+                    <LogOut className="mr-2 size-4" />
+                    Sair do 10xVagas
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <SidebarMenuButton size="lg"><UserRound className="size-4" /></SidebarMenuButton>
+            )}
+          </SidebarMenuItem>
           <SidebarMenuItem>
             {!hydrated ? (
               <SidebarMenuButton className="text-muted-foreground hover:text-foreground">
@@ -170,17 +223,17 @@ function AppSidebar() {
                 <DropdownMenuItem onClick={() => setSidebarMode('expanded')}>
                   <Maximize2 className="size-4 mr-2" />
                   Expandido
-                  {sidebarMode === 'expanded' && <Check className="size-4 ml-auto text-blue-600" />}
+                  {sidebarMode === 'expanded' && <Check className="ml-auto size-4 text-brand" />}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setSidebarMode('collapsed')}>
                   <Minimize2 className="size-4 mr-2" />
                   Recolhido
-                  {sidebarMode === 'collapsed' && <Check className="size-4 ml-auto text-blue-600" />}
+                  {sidebarMode === 'collapsed' && <Check className="ml-auto size-4 text-brand" />}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setSidebarMode('hover')}>
                   <MousePointerClick className="size-4 mr-2" />
                   Expandir ao passar
-                  {sidebarMode === 'hover' && <Check className="size-4 ml-auto text-blue-600" />}
+                  {sidebarMode === 'hover' && <Check className="ml-auto size-4 text-brand" />}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

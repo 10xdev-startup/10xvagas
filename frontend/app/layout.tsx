@@ -1,13 +1,11 @@
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
 import './globals.css'
 import { Toaster } from 'sonner'
-
-const inter = Inter({ subsets: ['latin'] })
+import { AuthProvider } from '@/hooks/useAuth'
 
 export const metadata: Metadata = {
-  title: 'Meu Projeto',
-  description: 'Descrição do projeto',
+  title: '10xVagas',
+  description: 'Radar inteligente de oportunidades profissionais',
 }
 
 export default function RootLayout({
@@ -16,9 +14,16 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="pt-BR">
-      <body className={inter.className}>
-        {children}
+    <html lang="pt-BR" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{const theme=localStorage.getItem('theme');document.documentElement.classList.toggle('dark',theme!=='light')}catch{document.documentElement.classList.add('dark')}`,
+          }}
+        />
+      </head>
+      <body className="font-sans">
+        <AuthProvider>{children}</AuthProvider>
         <Toaster />
       </body>
     </html>

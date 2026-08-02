@@ -3,3 +3,4 @@
  * `apiBase`, `supabase` — fica de fora de propósito; importe-a direto quando precisar.
  */
 export * from "@/services/userService"
+export * from '@/services/savedJobService'

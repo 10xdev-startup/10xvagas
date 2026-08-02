@@ -1,5 +1,5 @@
 import { getApiBaseUrl } from "@/lib/apiBase"
-import { supabase } from "@/lib/supabase"
+import { supabase } from "@/lib/supabase/client"
 import { ApiRequestError, toApiRequestError } from "@/services/apiErrors"
 
 /** Timeout default — curto, para a maioria das chamadas (blueprint §3.3). */

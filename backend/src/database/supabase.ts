@@ -1,7 +1,9 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
+import type { WebSocketLikeConstructor } from '@supabase/realtime-js'
 import dotenv from 'dotenv'
+import WebSocket from 'ws'
 
-dotenv.config()
+dotenv.config({ quiet: true })
 
 let client: SupabaseClient | null = null
 
@@ -14,7 +16,10 @@ function getClient(): SupabaseClient {
   if (!supabaseUrl || !supabaseKey) {
     throw new Error('SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY são obrigatórios')
   }
-  client = createClient(supabaseUrl, supabaseKey)
+  client = createClient(supabaseUrl, supabaseKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+    realtime: { transport: WebSocket as unknown as WebSocketLikeConstructor },
+  })
   return client
 }
 
