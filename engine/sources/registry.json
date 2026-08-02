@@ -1,0 +1,79 @@
+{
+  "schema_version": 1,
+  "sources": [
+    {
+      "id": "remotive",
+      "type": "remotive",
+      "label": "Remotive",
+      "mode": "automatic",
+      "enabled": true,
+      "settings": {
+        "endpoint": "https://remotive.com/api/remote-jobs?category=software-dev"
+      }
+    },
+    {
+      "id": "ashby",
+      "type": "ashby",
+      "label": "Ashby",
+      "mode": "automatic",
+      "enabled": true,
+      "settings": {
+        "boards": [
+          { "slug": "reacher", "company": "Reacher" },
+          { "slug": "rollstack", "company": "Rollstack" },
+          { "slug": "pareto-ai", "company": "Pareto AI" },
+          { "slug": "revenuecat", "company": "RevenueCat" },
+          { "slug": "connectly", "company": "Connectly" }
+        ]
+      }
+    },
+    {
+      "id": "greenhouse",
+      "type": "greenhouse",
+      "label": "Greenhouse",
+      "mode": "automatic",
+      "enabled": true,
+      "settings": {
+        "boards": [
+          { "token": "gitlab", "company": "GitLab" }
+        ]
+      }
+    },
+    {
+      "id": "lever",
+      "type": "lever",
+      "label": "Lever",
+      "mode": "automatic",
+      "enabled": true,
+      "settings": {
+        "sites": [
+          { "slug": "Flex", "company": "Flex" },
+          { "slug": "mashgin", "company": "Mashgin" },
+          { "slug": "oowlish", "company": "Oowlish" }
+        ]
+      }
+    },
+    {
+      "id": "linkedin",
+      "type": "assisted",
+      "label": "LinkedIn",
+      "mode": "assisted",
+      "enabled": true,
+      "settings": {
+        "url": "https://www.linkedin.com/jobs/",
+        "reason": "Busca e importacao por link, sem scraping, login ou envio automatizado."
+      }
+    },
+    {
+      "id": "indeed",
+      "type": "assisted",
+      "label": "Indeed",
+      "mode": "assisted",
+      "enabled": true,
+      "settings": {
+        "url": "https://br.indeed.com/",
+        "reason": "Busca e importacao por link; a API oficial de vagas exige parceria."
+      }
+    }
+  ]
+}

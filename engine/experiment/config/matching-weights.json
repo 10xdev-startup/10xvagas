@@ -1,0 +1,142 @@
+{
+  "schema_version": 1,
+  "score_range": {
+    "min": 0,
+    "max": 100
+  },
+  "component_weights": {
+    "desired_skill_alignment": 35,
+    "required_skill_coverage": 25,
+    "role_fit": 15,
+    "experience_fit": 20,
+    "evidence_bonus": 5
+  },
+  "desired_skill_alignment": {
+    "required_multiplier": 1.0,
+    "preferred_multiplier": 0.5,
+    "target_weight_for_full_score": 18.0
+  },
+  "required_skill_coverage": {
+    "unknown_requirement_credit": 0.35
+  },
+  "role_fit": {
+    "full_stack_engineer": 1.0,
+    "backend_engineer": 1.0,
+    "software_engineer": 1.0,
+    "ai_application_engineer": 1.0,
+    "frontend_engineer": 0.7,
+    "tech_lead": 0.35,
+    "other": 0.0
+  },
+  "experience_fit": {
+    "gap_years_for_zero_score": 5.0,
+    "founder_experience_credit_years": 0.5,
+    "maximum_founder_credit_years": 0.5
+  },
+  "evidence_bonus": {
+    "ai": {
+      "job_terms": ["AI systems", "LLM integrations", "AI agents", "prompt engineering", "RAG", "MCP"],
+      "profile_flag": "has_ai_project",
+      "points_ratio": 0.6
+    },
+    "product": {
+      "job_terms": ["product engineering", "startup experience", "growth experiments", "customer collaboration"],
+      "profile_flag": "commercial_production_experience",
+      "points_ratio": 0.4
+    }
+  },
+  "penalties": {
+    "missing_required_skill_points": 4.0,
+    "missing_required_skill_cap": 20.0,
+    "completed_degree_required": 8.0
+  },
+  "region_filter": {
+    "global_tokens": ["GLOBAL", "WORLDWIDE", "ANYWHERE"],
+    "country_fallback": {
+      "brasil": "BR",
+      "brazil": "BR"
+    }
+  },
+  "hard_filters": {
+    "work_model": true,
+    "language": true,
+    "employment_type": false,
+    "work_authorization": false,
+    "salary": false,
+    "seniority": false,
+    "availability": false
+  },
+  "technical_gap_skills": [
+    ".NET",
+    "Angular",
+    "AWS",
+    "C#",
+    "Celery",
+    "Cloudflare Workers",
+    "Django",
+    "Drizzle ORM",
+    "DynamoDB",
+    "GCP",
+    "Java",
+    "Kafka",
+    "Kubernetes",
+    "MongoDB",
+    "NestJS",
+    "PHP",
+    "Prisma",
+    "RabbitMQ",
+    "React Native",
+    "Redis",
+    "Ruby on Rails",
+    "RxJS",
+    "Terraform"
+  ],
+  "skill_aliases": {
+    "api design": "rest apis",
+    "api integrations": "rest apis",
+    "apis": "rest apis",
+    "automated testing": "jest",
+    "ci/cd": "github actions",
+    "express.js": "express",
+    "golang": "go",
+    "llm orchestration": "llm integrations",
+    "node": "node.js",
+    "postgres": "postgresql",
+    "pytest": "automated testing",
+    "tailwind": "tailwind css"
+  },
+  "capability_evidence": {
+    "ai coding tools": ["llm integrations"],
+    "ai systems": ["llm integrations", "rag"],
+    "backend systems": ["node.js", "python", "go", "express", "fastapi"],
+    "cloud infrastructure": ["azure", "docker"],
+    "code review": ["jest", "github actions"],
+    "customer collaboration": ["rest apis"],
+    "distributed systems": ["go", "sse", "webhooks"],
+    "enterprise systems": ["postgresql", "rest apis"],
+    "infrastructure as code": ["github actions", "docker"],
+    "microservices": ["node.js", "express", "fastapi", "go"],
+    "observability": ["azure", "docker"],
+    "platform engineering": ["docker", "azure", "github actions"],
+    "production reliability": ["jest", "docker", "github actions"],
+    "production systems": ["node.js", "next.js", "postgresql"],
+    "product engineering": ["next.js", "react", "node.js"],
+    "software engineering": ["typescript", "node.js", "python", "go"],
+    "startup experience": ["next.js", "node.js", "postgresql"],
+    "system design": ["postgresql", "rest apis", "docker"],
+    "web performance": ["next.js", "react"]
+  },
+  "language_levels": {
+    "basic": 1,
+    "intermediate": 2,
+    "advanced": 3,
+    "professional": 3,
+    "fluent": 4,
+    "native_or_bilingual": 5
+  },
+  "evaluation": {
+    "top_k": 10,
+    "minimum_overlap": 6,
+    "rbo_p": 0.9
+  }
+}

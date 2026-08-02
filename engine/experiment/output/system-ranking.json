@@ -1,0 +1,1181 @@
+{
+  "schema_version": 1,
+  "generated_from_snapshot": "2026-07-31",
+  "warning": "Para preservar o teste cego, nao abra este arquivo antes de concluir human-ranking.csv.",
+  "input_hashes": {
+    "canonical_profile_sha256": "5d7e760c1569536aed03abd60f47167abb6756c22e8489c372947b2df7d4147f",
+    "jobs_sha256": "165a980d167cb7f3e9d3b3ae0e7033e6f1635268991391e1a50e92e1a9776232",
+    "matching_config_sha256": "a45f3bd2e567a64b731d8bef03cdf8cfd9aa98eff5ecca2050e118aa93657657"
+  },
+  "evaluation": {
+    "top_k": 10,
+    "minimum_overlap": 6,
+    "rbo_p": 0.9
+  },
+  "ranking": [
+    {
+      "rank": 1,
+      "id": "INT-001",
+      "market": "international",
+      "company": "Reacher",
+      "title": "Software Engineer - Latam",
+      "source_url": "https://jobs.ashbyhq.com/reacher/e4d436eb-dd77-44d0-9586-44d48ad84aea",
+      "job_id": "INT-001",
+      "score": 97.2,
+      "excluded": false,
+      "exclusion_reasons": [],
+      "component_scores": {
+        "desired_skill_alignment": 35.0,
+        "required_skill_coverage": 25.0,
+        "role_fit": 15.0,
+        "experience_fit": 19.2,
+        "evidence_bonus": 3.0
+      },
+      "penalties": {
+        "missing_required_skills": 0.0,
+        "completed_degree": 0.0
+      },
+      "reasons": [
+        "Stack desejada presente: fastapi, jest, llm integrations, next.js, postgresql, python, react, tailwind css, typescript.",
+        "Familia de papel alinhada ao objetivo profissional.",
+        "Ha evidencia transferivel em produto/startup ou IA aplicada.",
+        "Modelo remoto compativel."
+      ],
+      "gaps": [
+        "Vaga pede cerca de 2 anos; perfil registra aproximadamente 1.3 ano(s) profissionais em desenvolvimento."
+      ],
+      "disabled_filters": [
+        "employment_type",
+        "work_authorization",
+        "salary",
+        "seniority",
+        "availability"
+      ]
+    },
+    {
+      "rank": 2,
+      "id": "BR-004",
+      "market": "brazil",
+      "company": "Empresa confidencial",
+      "title": "Desenvolvedor Full Stack Pleno",
+      "source_url": "https://remotive.com/remote/jobs/software-development/mid-level-full-stack-developer-4986323",
+      "job_id": "BR-004",
+      "score": 88.58,
+      "excluded": false,
+      "exclusion_reasons": [],
+      "component_scores": {
+        "desired_skill_alignment": 34.03,
+        "required_skill_coverage": 20.36,
+        "role_fit": 15.0,
+        "experience_fit": 19.2,
+        "evidence_bonus": 0.0
+      },
+      "penalties": {
+        "missing_required_skills": 0.0,
+        "completed_degree": 0.0
+      },
+      "reasons": [
+        "Stack desejada presente: docker, express, github actions, jest, node.js, postgresql, react, rest apis, typescript.",
+        "Familia de papel alinhada ao objetivo profissional.",
+        "Modelo remoto compativel."
+      ],
+      "gaps": [
+        "Vaga pede cerca de 2 anos; perfil registra aproximadamente 1.3 ano(s) profissionais em desenvolvimento."
+      ],
+      "disabled_filters": [
+        "employment_type",
+        "work_authorization",
+        "salary",
+        "seniority",
+        "availability"
+      ]
+    },
+    {
+      "rank": 3,
+      "id": "INT-002",
+      "market": "international",
+      "company": "Rollstack",
+      "title": "Software Engineer - TypeScript",
+      "source_url": "https://jobs.ashbyhq.com/rollstack/0e7f20c9-b63e-48d6-bcb3-5eb5f5f06e24",
+      "job_id": "INT-002",
+      "score": 88.34,
+      "excluded": false,
+      "exclusion_reasons": [],
+      "component_scores": {
+        "desired_skill_alignment": 30.14,
+        "required_skill_coverage": 25.0,
+        "role_fit": 15.0,
+        "experience_fit": 15.2,
+        "evidence_bonus": 3.0
+      },
+      "penalties": {
+        "missing_required_skills": 0.0,
+        "completed_degree": 0.0
+      },
+      "reasons": [
+        "Stack desejada presente: github actions, llm integrations, node.js, postgresql, react, rest apis, tailwind css, typescript.",
+        "Familia de papel alinhada ao objetivo profissional.",
+        "Ha evidencia transferivel em produto/startup ou IA aplicada.",
+        "Modelo remoto compativel."
+      ],
+      "gaps": [
+        "Vaga pede cerca de 3 anos; perfil registra aproximadamente 1.3 ano(s) profissionais em desenvolvimento."
+      ],
+      "disabled_filters": [
+        "employment_type",
+        "work_authorization",
+        "salary",
+        "seniority",
+        "availability"
+      ]
+    },
+    {
+      "rank": 4,
+      "id": "BR-005",
+      "market": "brazil",
+      "company": "EloGroup",
+      "title": "Desenvolvedor Junior",
+      "source_url": "https://remotive.com/remote/jobs/software-development/junior-developer-4219614",
+      "job_id": "BR-005",
+      "score": 85.5,
+      "excluded": false,
+      "exclusion_reasons": [],
+      "component_scores": {
+        "desired_skill_alignment": 30.14,
+        "required_skill_coverage": 20.36,
+        "role_fit": 15.0,
+        "experience_fit": 20.0,
+        "evidence_bonus": 0.0
+      },
+      "penalties": {
+        "missing_required_skills": 0.0,
+        "completed_degree": 0.0
+      },
+      "reasons": [
+        "Stack desejada presente: docker, express, fastapi, github actions, jest, node.js, python, react, rest apis.",
+        "Familia de papel alinhada ao objetivo profissional.",
+        "Modelo remoto compativel."
+      ],
+      "gaps": [],
+      "disabled_filters": [
+        "employment_type",
+        "work_authorization",
+        "salary",
+        "seniority",
+        "availability"
+      ]
+    },
+    {
+      "rank": 5,
+      "id": "BR-007",
+      "market": "brazil",
+      "company": "Lyncas",
+      "title": "Desenvolvedor Node.js Pleno",
+      "source_url": "https://remotive.com/remote/jobs/software-development/mid-level-node-js-developer-4887490",
+      "job_id": "BR-007",
+      "score": 82.16,
+      "excluded": false,
+      "exclusion_reasons": [],
+      "component_scores": {
+        "desired_skill_alignment": 25.28,
+        "required_skill_coverage": 22.68,
+        "role_fit": 15.0,
+        "experience_fit": 19.2,
+        "evidence_bonus": 0.0
+      },
+      "penalties": {
+        "missing_required_skills": 0.0,
+        "completed_degree": 0.0
+      },
+      "reasons": [
+        "Stack desejada presente: azure, docker, express, github actions, jest, node.js, rest apis, typescript.",
+        "Familia de papel alinhada ao objetivo profissional.",
+        "Modelo remoto compativel."
+      ],
+      "gaps": [
+        "Vaga pede cerca de 2 anos; perfil registra aproximadamente 1.3 ano(s) profissionais em desenvolvimento."
+      ],
+      "disabled_filters": [
+        "employment_type",
+        "work_authorization",
+        "salary",
+        "seniority",
+        "availability"
+      ]
+    },
+    {
+      "rank": 6,
+      "id": "BR-001",
+      "market": "brazil",
+      "company": "Soluvia",
+      "title": "Fullstack Developer - Node.js, TypeScript and React",
+      "source_url": "https://remotive.com/remote/jobs/software-development/fullstack-developer-node-js-typescript-and-react-3622893",
+      "job_id": "BR-001",
+      "score": 82.13,
+      "excluded": false,
+      "exclusion_reasons": [],
+      "component_scores": {
+        "desired_skill_alignment": 32.08,
+        "required_skill_coverage": 19.84,
+        "role_fit": 15.0,
+        "experience_fit": 19.2,
+        "evidence_bonus": 0.0
+      },
+      "penalties": {
+        "missing_required_skills": 4.0,
+        "completed_degree": 0.0
+      },
+      "reasons": [
+        "Stack desejada presente: docker, github actions, jest, node.js, postgresql, react, rest apis, typescript.",
+        "Familia de papel alinhada ao objetivo profissional.",
+        "Modelo remoto compativel."
+      ],
+      "gaps": [
+        "Requisitos tecnicos sem evidencia: kafka.",
+        "Vaga pede cerca de 2 anos; perfil registra aproximadamente 1.3 ano(s) profissionais em desenvolvimento."
+      ],
+      "disabled_filters": [
+        "employment_type",
+        "work_authorization",
+        "salary",
+        "seniority",
+        "availability"
+      ]
+    },
+    {
+      "rank": 7,
+      "id": "INT-006",
+      "market": "international",
+      "company": "Pareto AI",
+      "title": "Forward Deployed Software Engineer",
+      "source_url": "https://jobs.ashbyhq.com/pareto-ai/9b5842fb-f936-47d0-9985-2941264123d8/",
+      "job_id": "INT-006",
+      "score": 79.76,
+      "excluded": false,
+      "exclusion_reasons": [],
+      "component_scores": {
+        "desired_skill_alignment": 15.56,
+        "required_skill_coverage": 25.0,
+        "role_fit": 15.0,
+        "experience_fit": 19.2,
+        "evidence_bonus": 5.0
+      },
+      "penalties": {
+        "missing_required_skills": 0.0,
+        "completed_degree": 0.0
+      },
+      "reasons": [
+        "Stack desejada presente: python, react, typescript.",
+        "Familia de papel alinhada ao objetivo profissional.",
+        "Ha evidencia transferivel em produto/startup ou IA aplicada.",
+        "Modelo remoto compativel."
+      ],
+      "gaps": [
+        "Vaga pede cerca de 2 anos; perfil registra aproximadamente 1.3 ano(s) profissionais em desenvolvimento."
+      ],
+      "disabled_filters": [
+        "employment_type",
+        "work_authorization",
+        "salary",
+        "seniority",
+        "availability"
+      ]
+    },
+    {
+      "rank": 8,
+      "id": "BR-009",
+      "market": "brazil",
+      "company": "GFT Technologies",
+      "title": "Backend Developer Node.js Pleno",
+      "source_url": "https://remotive.com/remote/jobs/software-development/backend-developer-node-js-mid-level-4154126",
+      "job_id": "BR-009",
+      "score": 73.27,
+      "excluded": false,
+      "exclusion_reasons": [],
+      "component_scores": {
+        "desired_skill_alignment": 27.22,
+        "required_skill_coverage": 19.84,
+        "role_fit": 15.0,
+        "experience_fit": 15.2,
+        "evidence_bonus": 0.0
+      },
+      "penalties": {
+        "missing_required_skills": 4.0,
+        "completed_degree": 0.0
+      },
+      "reasons": [
+        "Stack desejada presente: github actions, jest, node.js, postgresql, rest apis, typescript.",
+        "Familia de papel alinhada ao objetivo profissional.",
+        "Modelo remoto compativel."
+      ],
+      "gaps": [
+        "Requisitos tecnicos sem evidencia: dynamodb.",
+        "Vaga pede cerca de 3 anos; perfil registra aproximadamente 1.3 ano(s) profissionais em desenvolvimento."
+      ],
+      "disabled_filters": [
+        "employment_type",
+        "work_authorization",
+        "salary",
+        "seniority",
+        "availability"
+      ]
+    },
+    {
+      "rank": 9,
+      "id": "INT-004",
+      "market": "international",
+      "company": "Ascertain",
+      "title": "Senior/Staff Full-Stack Engineer - Brazil",
+      "source_url": "https://jobs.ashbyhq.com/ascertain/d7b2aa32-ec96-46ac-99d9-8c002a1fbd73",
+      "job_id": "INT-004",
+      "score": 72.08,
+      "excluded": false,
+      "exclusion_reasons": [],
+      "component_scores": {
+        "desired_skill_alignment": 31.11,
+        "required_skill_coverage": 22.97,
+        "role_fit": 15.0,
+        "experience_fit": 0.0,
+        "evidence_bonus": 3.0
+      },
+      "penalties": {
+        "missing_required_skills": 0.0,
+        "completed_degree": 0.0
+      },
+      "reasons": [
+        "Stack desejada presente: docker, fastapi, github actions, postgresql, python, react, typescript.",
+        "Familia de papel alinhada ao objetivo profissional.",
+        "Ha evidencia transferivel em produto/startup ou IA aplicada.",
+        "Modelo remoto compativel."
+      ],
+      "gaps": [
+        "Vaga pede cerca de 7 anos; perfil registra aproximadamente 1.3 ano(s) profissionais em desenvolvimento."
+      ],
+      "disabled_filters": [
+        "employment_type",
+        "work_authorization",
+        "salary",
+        "seniority",
+        "availability"
+      ]
+    },
+    {
+      "rank": 10,
+      "id": "BR-008",
+      "market": "brazil",
+      "company": "Global TI",
+      "title": "Desenvolvedor Front-end Pleno (Next.js / React)",
+      "source_url": "https://remotive.com/remote/jobs/software-development/mid-level-front-end-developer-next-js-react-4545615",
+      "job_id": "BR-008",
+      "score": 71.85,
+      "excluded": false,
+      "exclusion_reasons": [],
+      "component_scores": {
+        "desired_skill_alignment": 25.28,
+        "required_skill_coverage": 16.88,
+        "role_fit": 10.5,
+        "experience_fit": 19.2,
+        "evidence_bonus": 0.0
+      },
+      "penalties": {
+        "missing_required_skills": 0.0,
+        "completed_degree": 0.0
+      },
+      "reasons": [
+        "Stack desejada presente: github actions, jest, next.js, react, rest apis, tailwind css, typescript.",
+        "Modelo remoto compativel."
+      ],
+      "gaps": [
+        "Vaga pede cerca de 2 anos; perfil registra aproximadamente 1.3 ano(s) profissionais em desenvolvimento."
+      ],
+      "disabled_filters": [
+        "employment_type",
+        "work_authorization",
+        "salary",
+        "seniority",
+        "availability"
+      ]
+    },
+    {
+      "rank": 11,
+      "id": "INT-015",
+      "market": "international",
+      "company": "AgilityIO",
+      "title": "Senior Full Stack Engineer (NestJS, Next.js, PostgreSQL)",
+      "source_url": "https://jobs.ashbyhq.com/agility.io/a92d8f85-e318-492f-862a-3e81573c08f5",
+      "job_id": "INT-015",
+      "score": 69.77,
+      "excluded": false,
+      "exclusion_reasons": [],
+      "component_scores": {
+        "desired_skill_alignment": 30.14,
+        "required_skill_coverage": 21.43,
+        "role_fit": 15.0,
+        "experience_fit": 7.2,
+        "evidence_bonus": 0.0
+      },
+      "penalties": {
+        "missing_required_skills": 4.0,
+        "completed_degree": 0.0
+      },
+      "reasons": [
+        "Stack desejada presente: next.js, node.js, postgresql, react, rest apis, typescript.",
+        "Familia de papel alinhada ao objetivo profissional.",
+        "Modelo remoto compativel."
+      ],
+      "gaps": [
+        "Requisitos tecnicos sem evidencia: nestjs.",
+        "Vaga pede cerca de 5 anos; perfil registra aproximadamente 1.3 ano(s) profissionais em desenvolvimento."
+      ],
+      "disabled_filters": [
+        "employment_type",
+        "work_authorization",
+        "salary",
+        "seniority",
+        "availability"
+      ]
+    },
+    {
+      "rank": 12,
+      "id": "INT-009",
+      "market": "international",
+      "company": "Goody",
+      "title": "Staff Software Engineer",
+      "source_url": "https://jobs.ashbyhq.com/goody/51513fb9-5e0f-40a3-8c2b-bf2b56183215",
+      "job_id": "INT-009",
+      "score": 69.62,
+      "excluded": false,
+      "exclusion_reasons": [],
+      "component_scores": {
+        "desired_skill_alignment": 20.42,
+        "required_skill_coverage": 25.0,
+        "role_fit": 15.0,
+        "experience_fit": 7.2,
+        "evidence_bonus": 2.0
+      },
+      "penalties": {
+        "missing_required_skills": 0.0,
+        "completed_degree": 0.0
+      },
+      "reasons": [
+        "Stack desejada presente: node.js, python, react, rest apis, typescript.",
+        "Familia de papel alinhada ao objetivo profissional.",
+        "Ha evidencia transferivel em produto/startup ou IA aplicada.",
+        "Modelo remoto compativel."
+      ],
+      "gaps": [
+        "Vaga pede cerca de 5 anos; perfil registra aproximadamente 1.3 ano(s) profissionais em desenvolvimento."
+      ],
+      "disabled_filters": [
+        "employment_type",
+        "work_authorization",
+        "salary",
+        "seniority",
+        "availability"
+      ]
+    },
+    {
+      "rank": 13,
+      "id": "BR-002",
+      "market": "brazil",
+      "company": "Workana",
+      "title": "Full Stack Developer (TypeScript & Cloudflare)",
+      "source_url": "https://remotive.com/remote/jobs/software-development/full-stack-developer-typescript-cloudflare-3937636",
+      "job_id": "BR-002",
+      "score": 68.17,
+      "excluded": false,
+      "exclusion_reasons": [],
+      "component_scores": {
+        "desired_skill_alignment": 27.22,
+        "required_skill_coverage": 18.75,
+        "role_fit": 15.0,
+        "experience_fit": 15.2,
+        "evidence_bonus": 0.0
+      },
+      "penalties": {
+        "missing_required_skills": 8.0,
+        "completed_degree": 0.0
+      },
+      "reasons": [
+        "Stack desejada presente: go, next.js, postgresql, react, tailwind css, typescript.",
+        "Familia de papel alinhada ao objetivo profissional.",
+        "Modelo remoto compativel."
+      ],
+      "gaps": [
+        "Requisitos tecnicos sem evidencia: cloudflare workers, drizzle orm.",
+        "Vaga pede cerca de 3 anos; perfil registra aproximadamente 1.3 ano(s) profissionais em desenvolvimento."
+      ],
+      "disabled_filters": [
+        "employment_type",
+        "work_authorization",
+        "salary",
+        "seniority",
+        "availability"
+      ]
+    },
+    {
+      "rank": 14,
+      "id": "INT-011",
+      "market": "international",
+      "company": "XBOW",
+      "title": "Software Engineer - AI Systems",
+      "source_url": "https://jobs.ashbyhq.com/xbowcareers/304f9f4e-477e-4d29-a39a-7c212738a0c8/",
+      "job_id": "INT-011",
+      "score": 67.86,
+      "excluded": false,
+      "exclusion_reasons": [],
+      "component_scores": {
+        "desired_skill_alignment": 9.72,
+        "required_skill_coverage": 20.94,
+        "role_fit": 15.0,
+        "experience_fit": 19.2,
+        "evidence_bonus": 3.0
+      },
+      "penalties": {
+        "missing_required_skills": 0.0,
+        "completed_degree": 0.0
+      },
+      "reasons": [
+        "Stack desejada presente: llm integrations, typescript.",
+        "Familia de papel alinhada ao objetivo profissional.",
+        "Ha evidencia transferivel em produto/startup ou IA aplicada.",
+        "Modelo remoto compativel."
+      ],
+      "gaps": [
+        "Vaga pede cerca de 2 anos; perfil registra aproximadamente 1.3 ano(s) profissionais em desenvolvimento."
+      ],
+      "disabled_filters": [
+        "employment_type",
+        "work_authorization",
+        "salary",
+        "seniority",
+        "availability"
+      ]
+    },
+    {
+      "rank": 15,
+      "id": "INT-003",
+      "market": "international",
+      "company": "Sierra Studio",
+      "title": "Senior Full Stack Engineer (TypeScript, React, Python and FastAPI)",
+      "source_url": "https://jobs.ashbyhq.com/sierra-studio/c83041f3-de71-4500-ab90-648d17004de4",
+      "job_id": "INT-003",
+      "score": 64.01,
+      "excluded": false,
+      "exclusion_reasons": [],
+      "component_scores": {
+        "desired_skill_alignment": 23.33,
+        "required_skill_coverage": 22.68,
+        "role_fit": 15.0,
+        "experience_fit": 0.0,
+        "evidence_bonus": 3.0
+      },
+      "penalties": {
+        "missing_required_skills": 0.0,
+        "completed_degree": 0.0
+      },
+      "reasons": [
+        "Stack desejada presente: fastapi, llm integrations, python, react, typescript.",
+        "Familia de papel alinhada ao objetivo profissional.",
+        "Ha evidencia transferivel em produto/startup ou IA aplicada.",
+        "Modelo remoto compativel."
+      ],
+      "gaps": [
+        "Vaga pede cerca de 8 anos; perfil registra aproximadamente 1.3 ano(s) profissionais em desenvolvimento."
+      ],
+      "disabled_filters": [
+        "employment_type",
+        "work_authorization",
+        "salary",
+        "seniority",
+        "availability"
+      ]
+    },
+    {
+      "rank": 16,
+      "id": "INT-010",
+      "market": "international",
+      "company": "Goody",
+      "title": "Senior Software Engineer, Growth",
+      "source_url": "https://jobs.ashbyhq.com/goody/aa85bb77-fb2e-4393-9462-3b8c248ecc8d",
+      "job_id": "INT-010",
+      "score": 63.23,
+      "excluded": false,
+      "exclusion_reasons": [],
+      "component_scores": {
+        "desired_skill_alignment": 16.53,
+        "required_skill_coverage": 18.5,
+        "role_fit": 15.0,
+        "experience_fit": 11.2,
+        "evidence_bonus": 2.0
+      },
+      "penalties": {
+        "missing_required_skills": 0.0,
+        "completed_degree": 0.0
+      },
+      "reasons": [
+        "Stack desejada presente: node.js, python, react, typescript.",
+        "Familia de papel alinhada ao objetivo profissional.",
+        "Ha evidencia transferivel em produto/startup ou IA aplicada.",
+        "Modelo remoto compativel."
+      ],
+      "gaps": [
+        "Vaga pede cerca de 4 anos; perfil registra aproximadamente 1.3 ano(s) profissionais em desenvolvimento."
+      ],
+      "disabled_filters": [
+        "employment_type",
+        "work_authorization",
+        "salary",
+        "seniority",
+        "availability"
+      ]
+    },
+    {
+      "rank": 17,
+      "id": "INT-012",
+      "market": "international",
+      "company": "RevenueCat",
+      "title": "Senior Software Engineer, Product",
+      "source_url": "https://jobs.ashbyhq.com/revenuecat/cf3c6265-8acf-402e-8e1a-e340784dcc2d/",
+      "job_id": "INT-012",
+      "score": 63.02,
+      "excluded": false,
+      "exclusion_reasons": [],
+      "component_scores": {
+        "desired_skill_alignment": 21.39,
+        "required_skill_coverage": 21.43,
+        "role_fit": 15.0,
+        "experience_fit": 7.2,
+        "evidence_bonus": 2.0
+      },
+      "penalties": {
+        "missing_required_skills": 4.0,
+        "completed_degree": 0.0
+      },
+      "reasons": [
+        "Stack desejada presente: postgresql, python, react, typescript.",
+        "Familia de papel alinhada ao objetivo profissional.",
+        "Ha evidencia transferivel em produto/startup ou IA aplicada.",
+        "Modelo remoto compativel."
+      ],
+      "gaps": [
+        "Requisitos tecnicos sem evidencia: aws.",
+        "Vaga pede cerca de 5 anos; perfil registra aproximadamente 1.3 ano(s) profissionais em desenvolvimento."
+      ],
+      "disabled_filters": [
+        "employment_type",
+        "work_authorization",
+        "salary",
+        "seniority",
+        "availability"
+      ]
+    },
+    {
+      "rank": 18,
+      "id": "BR-014",
+      "market": "brazil",
+      "company": "Framework",
+      "title": "Full Stack Developer (.NET and React) Pleno",
+      "source_url": "https://remotive.com/remote/jobs/software-development/full-stack-developer-net-and-react-mid-level-5195853",
+      "job_id": "BR-014",
+      "score": 58.64,
+      "excluded": false,
+      "exclusion_reasons": [],
+      "component_scores": {
+        "desired_skill_alignment": 14.58,
+        "required_skill_coverage": 17.86,
+        "role_fit": 15.0,
+        "experience_fit": 19.2,
+        "evidence_bonus": 0.0
+      },
+      "penalties": {
+        "missing_required_skills": 8.0,
+        "completed_degree": 0.0
+      },
+      "reasons": [
+        "Stack desejada presente: github actions, jest, react, rest apis.",
+        "Familia de papel alinhada ao objetivo profissional.",
+        "Modelo remoto compativel."
+      ],
+      "gaps": [
+        "Requisitos tecnicos sem evidencia: .net, aws.",
+        "Vaga pede cerca de 2 anos; perfil registra aproximadamente 1.3 ano(s) profissionais em desenvolvimento."
+      ],
+      "disabled_filters": [
+        "employment_type",
+        "work_authorization",
+        "salary",
+        "seniority",
+        "availability"
+      ]
+    },
+    {
+      "rank": 19,
+      "id": "BR-010",
+      "market": "brazil",
+      "company": "Cresol",
+      "title": "Desenvolvedor de Sistemas Senior - Frontend React e Next.js",
+      "source_url": "https://remotive.com/remote/jobs/software-development/senior-systems-developer-frontend-react-and-next-js-4396108",
+      "job_id": "BR-010",
+      "score": 57.86,
+      "excluded": false,
+      "exclusion_reasons": [],
+      "component_scores": {
+        "desired_skill_alignment": 27.22,
+        "required_skill_coverage": 20.94,
+        "role_fit": 10.5,
+        "experience_fit": 7.2,
+        "evidence_bonus": 0.0
+      },
+      "penalties": {
+        "missing_required_skills": 0.0,
+        "completed_degree": 8.0
+      },
+      "reasons": [
+        "Stack desejada presente: azure, jest, next.js, react, rest apis, typescript.",
+        "Modelo remoto compativel."
+      ],
+      "gaps": [
+        "Vaga pede cerca de 5 anos; perfil registra aproximadamente 1.3 ano(s) profissionais em desenvolvimento.",
+        "Vaga exige graduacao concluida; conclusao prevista para dezembro de 2026."
+      ],
+      "disabled_filters": [
+        "employment_type",
+        "work_authorization",
+        "salary",
+        "seniority",
+        "availability"
+      ]
+    },
+    {
+      "rank": 20,
+      "id": "INT-005",
+      "market": "international",
+      "company": "Sardine",
+      "title": "Senior Software Engineer",
+      "source_url": "https://jobs.ashbyhq.com/sardine/301662be-e7ab-4827-936a-13fe02add4aa",
+      "job_id": "INT-005",
+      "score": 55.38,
+      "excluded": false,
+      "exclusion_reasons": [],
+      "component_scores": {
+        "desired_skill_alignment": 19.44,
+        "required_skill_coverage": 20.94,
+        "role_fit": 15.0,
+        "experience_fit": 0.0,
+        "evidence_bonus": 0.0
+      },
+      "penalties": {
+        "missing_required_skills": 0.0,
+        "completed_degree": 0.0
+      },
+      "reasons": [
+        "Stack desejada presente: go, node.js, postgresql, python, react, rest apis, typescript.",
+        "Familia de papel alinhada ao objetivo profissional.",
+        "Modelo remoto compativel."
+      ],
+      "gaps": [
+        "Vaga pede cerca de 7 anos; perfil registra aproximadamente 1.3 ano(s) profissionais em desenvolvimento."
+      ],
+      "disabled_filters": [
+        "employment_type",
+        "work_authorization",
+        "salary",
+        "seniority",
+        "availability"
+      ]
+    },
+    {
+      "rank": 21,
+      "id": "INT-014",
+      "market": "international",
+      "company": "Labrynth (Infinity)",
+      "title": "Software Engineer",
+      "source_url": "https://jobs.ashbyhq.com/infinity-constellation/bf706ca9-983a-4ba3-8499-f3d9b599a3c6",
+      "job_id": "INT-014",
+      "score": 50.41,
+      "excluded": false,
+      "exclusion_reasons": [],
+      "component_scores": {
+        "desired_skill_alignment": 7.78,
+        "required_skill_coverage": 21.43,
+        "role_fit": 15.0,
+        "experience_fit": 7.2,
+        "evidence_bonus": 3.0
+      },
+      "penalties": {
+        "missing_required_skills": 4.0,
+        "completed_degree": 0.0
+      },
+      "reasons": [
+        "Stack desejada presente: fastapi, python.",
+        "Familia de papel alinhada ao objetivo profissional.",
+        "Ha evidencia transferivel em produto/startup ou IA aplicada.",
+        "Modelo remoto compativel."
+      ],
+      "gaps": [
+        "Requisitos tecnicos sem evidencia: redis.",
+        "Vaga pede cerca de 5 anos; perfil registra aproximadamente 1.3 ano(s) profissionais em desenvolvimento."
+      ],
+      "disabled_filters": [
+        "employment_type",
+        "work_authorization",
+        "salary",
+        "seniority",
+        "availability"
+      ]
+    },
+    {
+      "rank": 22,
+      "id": "BR-013",
+      "market": "brazil",
+      "company": "Base2 Tecnologia",
+      "title": "Tech Lead (Pleno/Senior)",
+      "source_url": "https://remotive.com/remote/jobs/software-development/tech-lead-pleno-senior-4818531",
+      "job_id": "BR-013",
+      "score": 48.94,
+      "excluded": false,
+      "exclusion_reasons": [],
+      "component_scores": {
+        "desired_skill_alignment": 22.36,
+        "required_skill_coverage": 18.12,
+        "role_fit": 5.25,
+        "experience_fit": 7.2,
+        "evidence_bonus": 0.0
+      },
+      "penalties": {
+        "missing_required_skills": 4.0,
+        "completed_degree": 0.0
+      },
+      "reasons": [
+        "Stack desejada presente: express, github actions, next.js, node.js, react.",
+        "Modelo remoto compativel."
+      ],
+      "gaps": [
+        "Requisitos tecnicos sem evidencia: aws.",
+        "Vaga pede cerca de 5 anos; perfil registra aproximadamente 1.3 ano(s) profissionais em desenvolvimento."
+      ],
+      "disabled_filters": [
+        "employment_type",
+        "work_authorization",
+        "salary",
+        "seniority",
+        "availability"
+      ]
+    },
+    {
+      "rank": 23,
+      "id": "BR-012",
+      "market": "brazil",
+      "company": "Grupo Taking",
+      "title": "Senior Back-end Developer",
+      "source_url": "https://remotive.com/remote/jobs/software-development/senior-back-end-developer-4288863",
+      "job_id": "BR-012",
+      "score": 48.31,
+      "excluded": false,
+      "exclusion_reasons": [],
+      "component_scores": {
+        "desired_skill_alignment": 21.39,
+        "required_skill_coverage": 16.72,
+        "role_fit": 15.0,
+        "experience_fit": 11.2,
+        "evidence_bonus": 0.0
+      },
+      "penalties": {
+        "missing_required_skills": 8.0,
+        "completed_degree": 8.0
+      },
+      "reasons": [
+        "Stack desejada presente: jest, node.js, react, typescript.",
+        "Familia de papel alinhada ao objetivo profissional.",
+        "Modelo remoto compativel."
+      ],
+      "gaps": [
+        "Requisitos tecnicos sem evidencia: php, react native.",
+        "Vaga pede cerca de 4 anos; perfil registra aproximadamente 1.3 ano(s) profissionais em desenvolvimento.",
+        "Vaga exige graduacao concluida; conclusao prevista para dezembro de 2026."
+      ],
+      "disabled_filters": [
+        "employment_type",
+        "work_authorization",
+        "salary",
+        "seniority",
+        "availability"
+      ]
+    },
+    {
+      "rank": 24,
+      "id": "INT-013",
+      "market": "international",
+      "company": "Clipboard",
+      "title": "Software Engineer, Platform",
+      "source_url": "https://jobs.ashbyhq.com/clipboard/e51b7b6a-187e-44b1-befa-ba46a2c4b00d/",
+      "job_id": "INT-013",
+      "score": 46.14,
+      "excluded": false,
+      "exclusion_reasons": [],
+      "component_scores": {
+        "desired_skill_alignment": 19.44,
+        "required_skill_coverage": 12.5,
+        "role_fit": 15.0,
+        "experience_fit": 15.2,
+        "evidence_bonus": 0.0
+      },
+      "penalties": {
+        "missing_required_skills": 16.0,
+        "completed_degree": 0.0
+      },
+      "reasons": [
+        "Stack desejada presente: docker, node.js, postgresql, typescript.",
+        "Familia de papel alinhada ao objetivo profissional.",
+        "Modelo remoto compativel."
+      ],
+      "gaps": [
+        "Requisitos tecnicos sem evidencia: aws, mongodb, nestjs, terraform.",
+        "Vaga pede cerca de 3 anos; perfil registra aproximadamente 1.3 ano(s) profissionais em desenvolvimento."
+      ],
+      "disabled_filters": [
+        "employment_type",
+        "work_authorization",
+        "salary",
+        "seniority",
+        "availability"
+      ]
+    },
+    {
+      "rank": 25,
+      "id": "BR-006",
+      "market": "brazil",
+      "company": "CI&T",
+      "title": "Senior Backend Node.js Developer",
+      "source_url": "https://remotive.com/remote/jobs/software-development/senior-backend-node-js-developer-3859694",
+      "job_id": "BR-006",
+      "score": 45.4,
+      "excluded": false,
+      "exclusion_reasons": [],
+      "component_scores": {
+        "desired_skill_alignment": 11.67,
+        "required_skill_coverage": 15.54,
+        "role_fit": 15.0,
+        "experience_fit": 7.2,
+        "evidence_bonus": 0.0
+      },
+      "penalties": {
+        "missing_required_skills": 4.0,
+        "completed_degree": 0.0
+      },
+      "reasons": [
+        "Stack desejada presente: github actions, jest, node.js.",
+        "Familia de papel alinhada ao objetivo profissional.",
+        "Modelo remoto compativel."
+      ],
+      "gaps": [
+        "Requisitos tecnicos sem evidencia: aws.",
+        "Vaga pede cerca de 5 anos; perfil registra aproximadamente 1.3 ano(s) profissionais em desenvolvimento."
+      ],
+      "disabled_filters": [
+        "employment_type",
+        "work_authorization",
+        "salary",
+        "seniority",
+        "availability"
+      ]
+    },
+    {
+      "rank": 26,
+      "id": "BR-003",
+      "market": "brazil",
+      "company": "Nexer",
+      "title": "Front-end Developer",
+      "source_url": "https://remotive.com/remote/jobs/software-development/front-end-developer-3776007",
+      "job_id": "BR-003",
+      "score": 44.15,
+      "excluded": false,
+      "exclusion_reasons": [],
+      "component_scores": {
+        "desired_skill_alignment": 15.56,
+        "required_skill_coverage": 10.89,
+        "role_fit": 10.5,
+        "experience_fit": 15.2,
+        "evidence_bonus": 0.0
+      },
+      "penalties": {
+        "missing_required_skills": 8.0,
+        "completed_degree": 0.0
+      },
+      "reasons": [
+        "Stack desejada presente: node.js, react, rest apis, typescript.",
+        "Modelo remoto compativel."
+      ],
+      "gaps": [
+        "Requisitos tecnicos sem evidencia: angular, rxjs.",
+        "Vaga pede cerca de 3 anos; perfil registra aproximadamente 1.3 ano(s) profissionais em desenvolvimento."
+      ],
+      "disabled_filters": [
+        "employment_type",
+        "work_authorization",
+        "salary",
+        "seniority",
+        "availability"
+      ]
+    },
+    {
+      "rank": 27,
+      "id": "BR-011",
+      "market": "brazil",
+      "company": "Capgemini",
+      "title": "Frontend Developer",
+      "source_url": "https://remotive.com/remote/jobs/software-development/frontend-developer-5178758",
+      "job_id": "BR-011",
+      "score": 44.13,
+      "excluded": false,
+      "exclusion_reasons": [],
+      "component_scores": {
+        "desired_skill_alignment": 9.72,
+        "required_skill_coverage": 12.71,
+        "role_fit": 10.5,
+        "experience_fit": 15.2,
+        "evidence_bonus": 0.0
+      },
+      "penalties": {
+        "missing_required_skills": 4.0,
+        "completed_degree": 0.0
+      },
+      "reasons": [
+        "Stack desejada presente: jest, typescript.",
+        "Modelo remoto compativel."
+      ],
+      "gaps": [
+        "Requisitos tecnicos sem evidencia: angular.",
+        "Vaga pede cerca de 3 anos; perfil registra aproximadamente 1.3 ano(s) profissionais em desenvolvimento."
+      ],
+      "disabled_filters": [
+        "employment_type",
+        "work_authorization",
+        "salary",
+        "seniority",
+        "availability"
+      ]
+    },
+    {
+      "rank": 28,
+      "id": "INT-008",
+      "market": "international",
+      "company": "Connectly",
+      "title": "Senior Software Engineer (Brazil)",
+      "source_url": "https://jobs.ashbyhq.com/connectly/a3c62b97-6d14-4249-82f4-3bfa6e25dfca",
+      "job_id": "INT-008",
+      "score": 38.26,
+      "excluded": false,
+      "exclusion_reasons": [],
+      "component_scores": {
+        "desired_skill_alignment": 15.56,
+        "required_skill_coverage": 12.5,
+        "role_fit": 15.0,
+        "experience_fit": 7.2,
+        "evidence_bonus": 0.0
+      },
+      "penalties": {
+        "missing_required_skills": 12.0,
+        "completed_degree": 0.0
+      },
+      "reasons": [
+        "Stack desejada presente: postgresql, python, react, typescript.",
+        "Familia de papel alinhada ao objetivo profissional.",
+        "Modelo remoto compativel."
+      ],
+      "gaps": [
+        "Requisitos tecnicos sem evidencia: aws, dynamodb, kafka.",
+        "Vaga pede cerca de 5 anos; perfil registra aproximadamente 1.3 ano(s) profissionais em desenvolvimento."
+      ],
+      "disabled_filters": [
+        "employment_type",
+        "work_authorization",
+        "salary",
+        "seniority",
+        "availability"
+      ]
+    },
+    {
+      "rank": 29,
+      "id": "BR-015",
+      "market": "brazil",
+      "company": "Resilient Co",
+      "title": "Senior Python Engineer",
+      "source_url": "https://remotive.com/remote/jobs/software-development/senior-python-engineer-4443088",
+      "job_id": "BR-015",
+      "score": 31.03,
+      "excluded": false,
+      "exclusion_reasons": [],
+      "component_scores": {
+        "desired_skill_alignment": 7.78,
+        "required_skill_coverage": 13.06,
+        "role_fit": 15.0,
+        "experience_fit": 7.2,
+        "evidence_bonus": 0.0
+      },
+      "penalties": {
+        "missing_required_skills": 12.0,
+        "completed_degree": 0.0
+      },
+      "reasons": [
+        "Stack desejada presente: fastapi, python.",
+        "Familia de papel alinhada ao objetivo profissional.",
+        "Modelo remoto compativel."
+      ],
+      "gaps": [
+        "Requisitos tecnicos sem evidencia: aws, dynamodb, redis.",
+        "Vaga pede cerca de 5 anos; perfil registra aproximadamente 1.3 ano(s) profissionais em desenvolvimento."
+      ],
+      "disabled_filters": [
+        "employment_type",
+        "work_authorization",
+        "salary",
+        "seniority",
+        "availability"
+      ]
+    },
+    {
+      "rank": 30,
+      "id": "INT-007",
+      "market": "international",
+      "company": "Articul8",
+      "title": "Software Engineer - Backend (Brazil)",
+      "source_url": "https://jobs.ashbyhq.com/articul8/d243ba6c-5209-4ade-882f-1388cfc7bd1f/",
+      "job_id": "INT-007",
+      "score": 0.0,
+      "excluded": true,
+      "exclusion_reasons": [
+        "Vaga hibrida fora de Belo Horizonte e regiao."
+      ],
+      "component_scores": {
+        "desired_skill_alignment": 18.47,
+        "required_skill_coverage": 15.42,
+        "role_fit": 15.0,
+        "experience_fit": 0.0,
+        "evidence_bonus": 3.0
+      },
+      "penalties": {
+        "missing_required_skills": 4.0,
+        "completed_degree": 8.0
+      },
+      "reasons": [
+        "Stack desejada presente: azure, express, fastapi, go, llm integrations, node.js, postgresql, python.",
+        "Familia de papel alinhada ao objetivo profissional.",
+        "Ha evidencia transferivel em produto/startup ou IA aplicada."
+      ],
+      "gaps": [
+        "Requisitos tecnicos sem evidencia: kubernetes.",
+        "Vaga pede cerca de 7 anos; perfil registra aproximadamente 1.3 ano(s) profissionais em desenvolvimento.",
+        "Vaga exige graduacao concluida; conclusao prevista para dezembro de 2026."
+      ],
+      "disabled_filters": [
+        "employment_type",
+        "work_authorization",
+        "salary",
+        "seniority",
+        "availability"
+      ]
+    }
+  ]
+}

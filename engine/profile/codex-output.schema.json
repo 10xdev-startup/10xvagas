@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "canonical_profile_json": {
+      "type": "string",
+      "description": "Objeto JSON completo do Perfil Canonico serializado como string."
+    },
+    "skills_evidenced": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "support_skills_evidenced": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "warnings": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "required": [
+    "canonical_profile_json",
+    "skills_evidenced",
+    "support_skills_evidenced",
+    "warnings"
+  ],
+  "additionalProperties": false
+}

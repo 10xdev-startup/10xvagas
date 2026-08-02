@@ -1,0 +1,513 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-07-31",
+  "review_status": "pending_human_review",
+  "source_files": [
+    "/home/augusto/code/portfolio/src/data/experiences.js",
+    "/home/augusto/code/portfolio/src/data/projects.js",
+    "/home/augusto/code/portfolio/src/data/tech-stack.js",
+    "/home/augusto/code/portfolio/public/curriculo-augusto-amado-2026.pdf",
+    "/home/augusto/code/portfolio/public/resume-augusto-amado-2026.pdf",
+    "briefing original do produto fornecido em 2026-07-31"
+  ],
+  "identity": {
+    "full_name": "Augusto Amado",
+    "headline": {
+      "pt": "Desenvolvedor Full Stack com foco em produtos SaaS e IA aplicada",
+      "en": "Full Stack Developer focused on SaaS products and applied AI"
+    },
+    "location": {
+      "city": "Belo Horizonte",
+      "state": "Minas Gerais",
+      "country": "Brasil",
+      "timezone": "America/Sao_Paulo"
+    },
+    "contact": {
+      "linkedin": "https://www.linkedin.com/in/augusto-amado-89507823a",
+      "portfolio": "https://augustoamado.vercel.app/#portfolio"
+    }
+  },
+  "work_preferences": {
+    "target_roles": [
+      "full_stack_engineer",
+      "backend_engineer",
+      "software_engineer",
+      "ai_application_engineer"
+    ],
+    "desired_work_models": [
+      "remote",
+      "hybrid"
+    ],
+    "hybrid_locations": [
+      {
+        "city": "Belo Horizonte",
+        "state": "Minas Gerais",
+        "country": "Brasil",
+        "include_metropolitan_region": true
+      }
+    ],
+    "target_markets": [
+      "brazil",
+      "international_remote"
+    ],
+    "accepted_employment_types": null,
+    "work_authorization_by_region": null,
+    "salary_expectations": [],
+    "target_seniority": null,
+    "availability": null
+  },
+  "matching_facts": {
+    "professional_development_years_approx": 1.3,
+    "commercial_production_experience": true,
+    "startup_founder_experience": true,
+    "has_ai_project": true,
+    "has_completed_higher_education": false
+  },
+  "languages": [
+    {
+      "language": "Portuguese",
+      "level": "native_or_bilingual",
+      "confidence": "inferred_high",
+      "evidence": "Curriculo e portfolio originalmente redigidos em portugues."
+    },
+    {
+      "language": "English",
+      "level": "advanced",
+      "confidence": "self_reported",
+      "evidence": "Curriculo em ingles e secao Languages do resume."
+    },
+    {
+      "language": "Spanish",
+      "level": "intermediate",
+      "confidence": "self_reported",
+      "evidence": "Secao Languages do resume."
+    },
+    {
+      "language": "Italian",
+      "level": "basic",
+      "confidence": "self_reported",
+      "evidence": "Secao Languages do resume."
+    }
+  ],
+  "skills_desired": [
+    {
+      "name": "TypeScript",
+      "priority": 3
+    },
+    {
+      "name": "Node.js",
+      "priority": 3
+    },
+    {
+      "name": "Express",
+      "priority": 3
+    },
+    {
+      "name": "Next.js",
+      "priority": 3
+    },
+    {
+      "name": "React",
+      "priority": 3
+    },
+    {
+      "name": "Supabase",
+      "priority": 3
+    },
+    {
+      "name": "PostgreSQL",
+      "priority": 3
+    },
+    {
+      "name": "Go",
+      "priority": 2
+    },
+    {
+      "name": "Python",
+      "priority": 2
+    },
+    {
+      "name": "FastAPI",
+      "priority": 2
+    },
+    {
+      "name": "Docker",
+      "priority": 2
+    },
+    {
+      "name": "Azure",
+      "priority": 2
+    },
+    {
+      "name": "n8n",
+      "priority": 1
+    },
+    {
+      "name": "Jest",
+      "priority": 2
+    },
+    {
+      "name": "REST APIs",
+      "priority": 2
+    },
+    {
+      "name": "LLM integrations",
+      "priority": 2
+    },
+    {
+      "name": "RAG",
+      "priority": 2
+    },
+    {
+      "name": "pgvector",
+      "priority": 1
+    },
+    {
+      "name": "GitHub Actions",
+      "priority": 1
+    },
+    {
+      "name": "Tailwind CSS",
+      "priority": 1
+    }
+  ],
+  "skills_known": {
+    "desired_and_evidenced": [
+      "TypeScript",
+      "Node.js",
+      "Express",
+      "Next.js",
+      "React",
+      "Supabase",
+      "PostgreSQL",
+      "Go",
+      "Python",
+      "FastAPI",
+      "Docker",
+      "Azure",
+      "n8n",
+      "Jest",
+      "REST APIs",
+      "OAuth",
+      "JWT",
+      "RBAC",
+      "Stripe",
+      "GitHub API",
+      "webhooks",
+      "SSE",
+      "LLM integrations",
+      "RAG",
+      "pgvector",
+      "GitHub Actions",
+      "Tailwind CSS",
+      "shadcn/ui",
+      "SQL",
+      "Linux"
+    ],
+    "known_but_not_desired_for_matching": [
+      "technical support",
+      "helpdesk",
+      "Office 365",
+      "hardware maintenance",
+      "workstation maintenance",
+      "AnyDesk",
+      "LogMeIn",
+      "TeamViewer",
+      "network configuration",
+      "VPN configuration",
+      "antivirus administration",
+      "ticket management",
+      "Power BI",
+      "Microsoft Copilot"
+    ],
+    "secondary_or_limited_evidence": [
+      "Django",
+      "Vite",
+      "Zod",
+      "C#",
+      "Unity"
+    ]
+  },
+  "experience": [
+    {
+      "company": "Startup 10xDev",
+      "role": {
+        "pt": "Cofundador e Desenvolvedor Full Stack",
+        "en": "Co-founder and Full Stack Developer"
+      },
+      "start_date": "2025-06",
+      "end_date": null,
+      "current": true,
+      "work_model": "remote",
+      "location": "Belo Horizonte, MG, Brasil",
+      "highlights": {
+        "pt": [
+          "Desenvolve e mantem SaaS em producao com Next.js, Node.js, TypeScript e Supabase/PostgreSQL, com 48 tabelas e mais de 1.000 commits.",
+          "Construiu orquestracao multi-LLM para seis modelos de tres provedores, com SSE, cancelamento e fallback automatico.",
+          "Implementou billing por uso com Stripe, webhooks idempotentes e diagnostico por request id.",
+          "Reduziu o setup de Stripe de uma semana para cerca de 20 minutos com um guia executavel reutilizado em tres projetos.",
+          "Mantem testes Jest/supertest e deploy Docker via GitHub Actions e Azure."
+        ],
+        "en": [
+          "Builds and maintains a production SaaS with Next.js, Node.js, TypeScript and Supabase/PostgreSQL, spanning 48 tables and over 1,000 commits.",
+          "Built multi-LLM orchestration for six models from three providers with SSE, cancellation and automatic fallback.",
+          "Implemented usage-based Stripe billing, idempotent webhooks and request-id diagnostics.",
+          "Reduced Stripe setup from one week to about 20 minutes through an executable guide reused in three projects.",
+          "Maintains Jest/supertest coverage and Docker deployment through GitHub Actions and Azure."
+        ]
+      }
+    },
+    {
+      "company": "CONTI Consultoria",
+      "role": {
+        "pt": "Assistente de Desenvolvimento",
+        "en": "Development Assistant"
+      },
+      "start_date": "2024-09",
+      "end_date": "2024-10",
+      "current": false,
+      "work_model": "on_site",
+      "location": "Belo Horizonte, MG, Brasil",
+      "highlights": {
+        "pt": [
+          "Atuou em suporte tecnico, automacao e melhoria de processos internos de TI.",
+          "Administrou Office 365 e Azure e criou automacoes com Copilot e relatorios Power BI."
+        ],
+        "en": [
+          "Worked on technical support, automation and internal IT process improvement.",
+          "Administered Office 365 and Azure and built Copilot automations and Power BI reports."
+        ]
+      }
+    },
+    {
+      "company": "Nattive Tecnologia",
+      "role": {
+        "pt": "Estagiario de TI",
+        "en": "IT Intern"
+      },
+      "start_date": "2023-09",
+      "end_date": "2024-09",
+      "current": false,
+      "work_model": "on_site",
+      "location": "Belo Horizonte, MG, Brasil",
+      "highlights": {
+        "pt": [
+          "Prestou suporte remoto e presencial, configurou redes e VPN e manteve estacoes.",
+          "Teve contato inicial com SQL e Azure em rotinas de suporte e diagnostico."
+        ],
+        "en": [
+          "Provided remote and on-site support, configured networks and VPNs, and maintained workstations.",
+          "Gained initial SQL and Azure exposure in support and diagnostic routines."
+        ]
+      }
+    },
+    {
+      "company": "RTI Solucoes Inteligentes",
+      "role": {
+        "pt": "Suporte Tecnico",
+        "en": "Technical Support Specialist"
+      },
+      "start_date": "2023-01",
+      "end_date": "2023-09",
+      "current": false,
+      "work_model": "hybrid",
+      "location": "Belo Horizonte, MG, Brasil",
+      "highlights": {
+        "pt": [
+          "Prestou suporte remoto, instalou software e drivers e configurou dispositivos e compartilhamento de rede."
+        ],
+        "en": [
+          "Provided remote support, installed software and drivers, and configured devices and network sharing."
+        ]
+      }
+    }
+  ],
+  "projects": [
+    {
+      "name": "AI Gateway",
+      "url": "https://github.com/augusto-amado/ai-gateway",
+      "summary": {
+        "pt": "Gateway multi-LLM em Go com consenso paralelo, streaming SSE, Ollama e interface React/Vite para comparar modelos ao vivo.",
+        "en": "Multi-LLM gateway in Go with parallel consensus, SSE streaming, Ollama and a React/Vite interface for live model comparison."
+      },
+      "evidence": [
+        "Go",
+        "React",
+        "SSE",
+        "goroutines",
+        "LLM integrations",
+        "testing"
+      ]
+    },
+    {
+      "name": "RAG Service",
+      "url": "https://github.com/augusto-amado/rag-service",
+      "summary": {
+        "pt": "RAG permission-aware em Python/FastAPI com busca hibrida pgvector + full-text fundida por RRF, embeddings locais e metricas hit@3 e MRR iguais a 1,0 no corpus de teste.",
+        "en": "Permission-aware RAG in Python/FastAPI with pgvector + full-text hybrid retrieval fused by RRF, local embeddings, and hit@3 and MRR of 1.0 on the test corpus."
+      },
+      "evidence": [
+        "Python",
+        "FastAPI",
+        "PostgreSQL",
+        "pgvector",
+        "RAG",
+        "Docker",
+        "pytest"
+      ]
+    },
+    {
+      "name": "10xDev",
+      "url": "https://10xdev.com.br",
+      "summary": {
+        "pt": "SaaS em producao para desenvolvedores com sincronizacao GitHub, billing Stripe e analise tecnica multi-LLM.",
+        "en": "Production developer SaaS with GitHub synchronization, Stripe billing and multi-LLM technical analysis."
+      },
+      "evidence": [
+        "Next.js",
+        "TypeScript",
+        "Node.js",
+        "Supabase",
+        "PostgreSQL",
+        "Stripe",
+        "GitHub API",
+        "Azure"
+      ]
+    }
+  ],
+  "education": [
+    {
+      "institution": "Anhanguera Educacional",
+      "program": {
+        "pt": "Analise e Desenvolvimento de Sistemas",
+        "en": "Systems Analysis and Development"
+      },
+      "status": "in_progress",
+      "expected_completion": "2026-12"
+    }
+  ],
+  "narratives": {
+    "approval_status": "draft_pending_human_review",
+    "bios": {
+      "short": {
+        "pt": "Desenvolvedor Full Stack e cofundador da 10xDev, com experiencia pratica construindo SaaS em producao com TypeScript, Node.js, Next.js, React e PostgreSQL, alem de projetos open source em Go e Python voltados a LLMs e RAG.",
+        "en": "Full Stack Developer and 10xDev co-founder with hands-on experience building production SaaS with TypeScript, Node.js, Next.js, React and PostgreSQL, plus open-source Go and Python projects focused on LLMs and RAG."
+      },
+      "medium": {
+        "pt": "Sou desenvolvedor Full Stack e cofundador da 10xDev. Trabalho de ponta a ponta em produtos SaaS com TypeScript, Node.js, Next.js, React, Supabase/PostgreSQL, testes e deploy em Docker/Azure. Tambem criei um gateway multi-LLM em Go e um servico RAG permission-aware em Python/FastAPI com busca hibrida via pgvector. Gosto de transformar requisitos ambíguos em sistemas simples, observaveis e prontos para producao.",
+        "en": "I am a Full Stack Developer and co-founder of 10xDev. I work end to end on SaaS products using TypeScript, Node.js, Next.js, React, Supabase/PostgreSQL, automated tests and Docker/Azure deployment. I also built a multi-LLM gateway in Go and a permission-aware RAG service in Python/FastAPI with pgvector hybrid search. I enjoy turning ambiguous requirements into simple, observable, production-ready systems."
+      },
+      "long": {
+        "pt": "Sou desenvolvedor Full Stack e cofundador da 10xDev, onde desenvolvo e mantenho um SaaS em producao com Next.js, Node.js, TypeScript e Supabase/PostgreSQL. Atuo em APIs, dashboards, billing por uso com Stripe, sincronizacao GitHub, testes automatizados e deploy com Docker, GitHub Actions e Azure. Entre os resultados documentados estao mais de 1.000 commits, uma base de 48 tabelas e a reducao do setup de Stripe de uma semana para cerca de 20 minutos por meio de um guia executavel. Em projetos open source, construi um AI Gateway em Go para orquestrar varios LLMs e um RAG Service em Python/FastAPI com busca hibrida, pgvector e controle de acesso. Procuro oportunidades remotas ou hibridas em Belo Horizonte e regiao em desenvolvimento de produto, backend ou full stack e IA aplicada.",
+        "en": "I am a Full Stack Developer and co-founder of 10xDev, where I build and maintain a production SaaS with Next.js, Node.js, TypeScript and Supabase/PostgreSQL. My work spans APIs, dashboards, usage-based Stripe billing, GitHub synchronization, automated tests and deployment with Docker, GitHub Actions and Azure. Documented outcomes include more than 1,000 commits, a 48-table data model and reducing Stripe setup from one week to about 20 minutes through an executable guide. In open source, I built an AI Gateway in Go to orchestrate multiple LLMs and a RAG Service in Python/FastAPI with hybrid retrieval, pgvector and access control. I am looking for remote opportunities or hybrid roles in Greater Belo Horizonte involving product engineering, backend or full-stack development and applied AI."
+      }
+    },
+    "star_stories": [
+      {
+        "type": "technical_challenge",
+        "status": "draft_pending_human_review",
+        "pt": {
+          "situation": "A 10xDev precisava consumir seis modelos de tres provedores com contratos de API e comportamento de streaming diferentes.",
+          "task": "Criar uma interface unica que evitasse acoplamento do produto a cada provedor e continuasse confiavel em falhas.",
+          "action": "Implementei normalizacao de tres formatos, streaming SSE, cancelamento e fallback automatico entre modelos.",
+          "result": "O produto passou a orquestrar os seis modelos por uma unica superficie; o codigo e os testes do projeto sustentam o resultado, mas ainda falta aprovar a formulacao narrativa."
+        },
+        "en": {
+          "situation": "10xDev needed to consume six models from three providers with different API contracts and streaming behavior.",
+          "task": "Create one interface that kept the product decoupled from individual providers and remained reliable during failures.",
+          "action": "I implemented normalization for three formats, SSE streaming, cancellation and automatic provider fallback.",
+          "result": "The product could orchestrate all six models through one surface; project code and tests support the result, but the narrative wording still needs approval."
+        }
+      },
+      {
+        "type": "architecture_decision",
+        "status": "draft_pending_human_review",
+        "pt": {
+          "situation": "O RAG Service precisava recuperar conteudo relevante sem vazar documentos entre usuarios.",
+          "task": "Combinar relevancia semantica e lexical mantendo permissao por usuario em todas as rotas de recuperacao.",
+          "action": "Implementei busca vetorial e full-text no PostgreSQL, fundidas por RRF, com o filtro de proprietario aplicado nos dois lados e embeddings locais via Ollama.",
+          "result": "O corpus de teste atingiu hit@3 e MRR iguais a 1,0, com respostas auditaveis por fonte."
+        },
+        "en": {
+          "situation": "The RAG Service needed relevant retrieval without leaking documents across users.",
+          "task": "Combine semantic and lexical relevance while enforcing per-user permissions in every retrieval path.",
+          "action": "I implemented PostgreSQL vector and full-text retrieval fused by RRF, applied the owner filter to both branches, and used local Ollama embeddings.",
+          "result": "The test corpus reached hit@3 and MRR of 1.0, with answers auditable through their sources."
+        }
+      },
+      {
+        "type": "process_improvement",
+        "status": "draft_pending_human_review",
+        "pt": {
+          "situation": "Integracoes Stripe repetiam um processo manual que havia levado cerca de uma semana.",
+          "task": "Transformar o conhecimento do setup em um processo repetivel para outros projetos.",
+          "action": "Documentei a integracao como guia executavel, incluindo precificacao parametrizada, webhooks idempotentes e diagnostico por request id.",
+          "result": "O setup caiu para cerca de 20 minutos e o guia foi reutilizado em tres projetos."
+        },
+        "en": {
+          "situation": "Stripe integrations repeated a manual setup process that had taken about one week.",
+          "task": "Turn that setup knowledge into a repeatable process for other projects.",
+          "action": "I documented the integration as an executable guide, including parameterized pricing, idempotent webhooks and request-id diagnostics.",
+          "result": "Setup time fell to about 20 minutes and the guide was reused across three projects."
+        }
+      },
+      {
+        "type": "conflict",
+        "status": "needs_human_input",
+        "pt": null,
+        "en": null
+      },
+      {
+        "type": "failure",
+        "status": "needs_human_input",
+        "pt": null,
+        "en": null
+      }
+    ]
+  },
+  "facts_pending_confirmation": [
+    {
+      "field": "work_preferences.accepted_employment_types",
+      "question_pt": "Quais regimes voce aceita: CLT, PJ e/ou contractor internacional?",
+      "blocking_filters": [
+        "employment_type"
+      ]
+    },
+    {
+      "field": "work_preferences.work_authorization_by_region",
+      "question_pt": "Em quais paises ou regioes voce tem autorizacao de trabalho sem sponsorship?",
+      "blocking_filters": [
+        "work_authorization"
+      ]
+    },
+    {
+      "field": "work_preferences.salary_expectations",
+      "question_pt": "Qual e o piso desejado em BRL, USD e EUR, preservando periodo e regime de cada faixa?",
+      "blocking_filters": [
+        "salary"
+      ]
+    },
+    {
+      "field": "work_preferences.target_seniority",
+      "question_pt": "Qual senioridade alvo na escala 1-5?",
+      "blocking_filters": [
+        "seniority"
+      ]
+    },
+    {
+      "field": "work_preferences.availability",
+      "question_pt": "Qual disponibilidade para inicio e sobreposicao com fusos dos EUA/Europa?",
+      "blocking_filters": [
+        "availability",
+        "timezone_overlap"
+      ]
+    },
+    {
+      "field": "work_preferences.clt_equivalence_factor",
+      "question_pt": "Qual fator pessoal deve equivaler CLT bruto a PJ/contractor?",
+      "blocking_filters": [
+        "compensation_equivalence"
+      ]
+    }
+  ]
+}
