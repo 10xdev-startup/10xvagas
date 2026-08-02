@@ -3,6 +3,7 @@ import { supabase } from '@/database/supabase'
 import { UserModel } from '@/models/UserModel'
 import { sendError } from '@/utils/apiResponse'
 import type { AuthUser } from '@/types/user'
+import { isAllowedUserEmail } from '@/utils/access'
 
 // Augmenta o Request do Express com o usuario autenticado — disponivel (tipado) em
 // todo controller depois deste middleware.
@@ -39,6 +40,11 @@ export async function supabaseMiddleware(
   const authUser = data.user
   if (error || !authUser) {
     sendError(res, 401, 'Token invalido ou expirado', 'AUTH_INVALID')
+    return
+  }
+
+  if (!isAllowedUserEmail(authUser.email)) {
+    sendError(res, 403, 'Conta nao autorizada para este workspace.', 'ACCOUNT_NOT_ALLOWED')
     return
   }
 
