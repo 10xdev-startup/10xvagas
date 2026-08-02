@@ -1,53 +1,53 @@
-# Frontend Dockerfile - Next.js 15 com TypeScript
-FROM node:20-alpine AS base
-
-RUN apk add --no-cache libc6-compat wget
+FROM node:20-alpine AS dependencies
 
 WORKDIR /app
 
-COPY package*.json ./
+COPY package.json package-lock.json ./
+COPY backend/package.json ./backend/package.json
+COPY frontend/package.json ./frontend/package.json
 
-RUN npm install --legacy-peer-deps
+RUN npm ci --workspace=frontend --include-workspace-root
 
-# Build stage
-FROM base AS builder
-COPY . .
+FROM dependencies AS builder
 
-ENV NEXT_TELEMETRY_DISABLED 1
-ENV NODE_ENV production
+COPY frontend ./frontend
+COPY engine ./engine
+
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV NODE_ENV=production
 
 ARG NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
-
 ARG NEXT_PUBLIC_SUPABASE_URL
 ENV NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL
-
 ARG NEXT_PUBLIC_SUPABASE_ANON_KEY
 ENV NEXT_PUBLIC_SUPABASE_ANON_KEY=$NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-RUN npm run build
+RUN npm run build --workspace=frontend
 
-# Production stage
 FROM node:20-alpine AS runner
 
 WORKDIR /app
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV PORT=8080
+ENV HOSTNAME=0.0.0.0
 
-ENV NODE_ENV production
-ENV NEXT_TELEMETRY_DISABLED 1
+RUN addgroup --system --gid 1001 nodejs \
+  && adduser --system --uid 1001 nextjs
 
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
+COPY package.json package-lock.json ./
+COPY backend/package.json ./backend/package.json
+COPY frontend/package.json ./frontend/package.json
+RUN npm ci --omit=dev --workspace=frontend --include-workspace-root \
+  && npm cache clean --force
 
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/.next ./.next
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/package.json ./
+COPY --from=builder --chown=nextjs:nodejs /app/frontend/.next ./frontend/.next
+COPY --from=builder --chown=nextjs:nodejs /app/frontend/public ./frontend/public
+COPY --from=builder --chown=nextjs:nodejs /app/engine ./engine
 
+WORKDIR /app/frontend
 USER nextjs
 
 EXPOSE 8080
-
-ENV PORT 8080
-ENV HOSTNAME "0.0.0.0"
-
 CMD ["npm", "start"]

@@ -4,5 +4,9 @@ dist/
 *.log
 .env
 .env*.local
-!.env.local
-package-lock.json
+
+# Credenciais locais do 10xVagas — nunca versionar.
+# Use os .env.example como molde; nenhum .env real entra no git.
+backend/.env
+frontend/.env.development.local
+frontend/.env.production.local

@@ -1,308 +1,137 @@
-# Meu Projeto
+# 10xVagas
 
-> Template full-stack moderno com Next.js, Express e Supabase. Pronto para começar.
+Radar inteligente de oportunidades profissionais. Descobre vagas, separa sinal de ruido, compara cada descricao com o Perfil Canonico e mantem a decisao final de candidatura com o usuario.
 
-[![Node.js](https://img.shields.io/badge/Node.js-v22+-green?style=flat-square)](https://nodejs.org)
-[![Next.js](https://img.shields.io/badge/Next.js-16-black?style=flat-square)](https://nextjs.org)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue?style=flat-square)](https://www.typescriptlang.org)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind-v3-06B6D4?style=flat-square)](https://tailwindcss.com)
+O produto segue o posicionamento de **copiloto de candidatura, nao bot de spam**.
 
-## 📚 Visão Geral
+## Estado atual
 
-Projeto full-stack pronto para produção com:
+- Radar web com vagas nacionais e internacionais.
+- Rotas independentes para Radar, Vagas salvas, Perfil Canonico e Fontes.
+- Shortlist local-first por usuario, sincronizada pela API Node com o Supabase.
+- Alcance da busca configuravel entre Brasil remoto, BH/RMBH hibrido e exterior remoto.
+- Preferencia por remoto e por hibrido em Belo Horizonte/regiao metropolitana.
+- Perfil Canonico bilingue extraido do portfolio e curriculo.
+- Experimento de matching explicavel com 30 vagas de calibracao.
+- Coleta publica com adaptadores Ashby, Greenhouse, Lever e Remotive.
+- LinkedIn e Indeed em modo assistido, sem scraping ou automacao de login.
+- Login Google com Supabase Auth, sessao SSR e dashboard protegido.
+- Envio de candidatura permanece manual (`review`).
 
-- **Frontend**: Next.js 16 + React 19 com App Router
-- **Backend**: Express 5 + TypeScript com padrão Controller → Model → Routes
-- **Banco**: Supabase (PostgreSQL)
-- **UI**: Radix UI + Tailwind CSS + shadcn/ui
-- **Sidebar**: 3 modos de visualização (expandida, colapsada, hover)
+Ainda nao existem fila Postgres, Playwright ou worker de candidatura. A coleta publica gera um snapshot local e ainda precisa de agendamento. Esses componentes entram depois da validacao do ranking.
 
-Tudo configurado, tipado e pronto para escalar.
+## Arquitetura
 
-## 🚀 Quick Start
+```text
+10xvagas/
+├── backend/      Express 5 + TypeScript — API de produto, auth e CRUD
+├── frontend/     Next.js 16 + React 19 — radar e dashboard
+├── engine/       Python — ferramentas de matching, parsing, Perfil Canonico e LLM
+│   ├── experiment/   calibracao cega do ranking
+│   └── sources/      contrato e adaptadores de descoberta
+├── worker/       Node + Playwright — ATS e formularios (planejado; container dedicado)
+└── package.json  npm workspaces para backend + frontend
+```
 
-### Pré-requisitos
+Fronteiras planejadas:
 
-- Node.js >= 18.0.0
-- npm ou yarn
-- Conta Supabase (https://supabase.com)
+- Node e o produto: autenticacao, API, configuracao e leitura do banco.
+- Python e o motor de ferramentas: coleta, parsing, embeddings, matching e redacao.
+- Node tambem executa o worker de browser: adaptadores deterministas em Playwright e Stagehand somente como fallback para formulario desconhecido.
+- O frontend nunca chama LLM ou site de vaga diretamente.
+- Engine e backend se comunicarao por fila em tabela Postgres, sem HTTP sincrono no pipeline.
+- O clique final comeca humano (`review`); automacao de LinkedIn continua fora de escopo.
 
-### Instalação
+No experimento atual, o Server Component do Next le snapshots JSON locais. Isso e temporario e nao representa a arquitetura final de producao.
+
+## Inicio rapido
+
+Requisitos:
+
+- Node.js 20.19 ou superior.
+- npm.
+- Python 3.11 ou superior.
 
 ```bash
-# Clone o repositório
-git clone <seu-repo>
-cd meu-projeto
-
-# Instale as dependências
 npm install
-
-# Configure as variáveis de ambiente
-cp .env.example backend/.env
-cp .env.example frontend/.env.local
-
-# Edite os arquivos .env com suas credenciais Supabase
-```
-
-### Rodando Localmente
-
-```bash
-# Modo desenvolvimento (frontend + backend)
 npm run dev
-
-# Ou separadamente:
-
-# Terminal 1 - Backend (porta 3001)
-cd backend && npm run dev
-
-# Terminal 2 - Frontend (porta 3000)
-cd frontend && npm run dev
 ```
 
-Acesse:
-- 🖥️ **Frontend**: http://localhost:3000
-- 🔌 **API**: http://localhost:3001
+Antes do primeiro login, copie as variaveis de `frontend/.env.example` e `backend/.env.example` para os respectivos arquivos locais e informe as chaves do mesmo projeto Supabase. No painel do Supabase:
 
-## 📁 Estrutura do Projeto
+1. habilite o provider Google em **Authentication → Providers**;
+2. adicione `http://localhost:3000/auth/callback` nas URLs de redirecionamento;
+3. crie `public.users` conforme o DDL documentado em [`.claude/CLAUDE.md`](.claude/CLAUDE.md).
 
-```
-meu-projeto/
-├── backend/
-│   ├── src/
-│   │   ├── controllers/    # Lógica das rotas
-│   │   ├── models/         # Operações com banco de dados
-│   │   ├── routes/         # Definição das rotas
-│   │   ├── middleware/     # Middlewares Express
-│   │   ├── types/          # Tipos TypeScript
-│   │   ├── database/       # Configuração Supabase
-│   │   ├── utils/          # Funções utilitárias
-│   │   └── index.ts        # Servidor principal
-│   ├── package.json
-│   └── tsconfig.json
-│
-├── frontend/
-│   ├── app/
-│   │   ├── (dashboard)/    # Rotas protegidas
-│   │   ├── layout.tsx      # Layout raiz
-│   │   └── globals.css     # Estilos globais
-│   ├── components/
-│   │   ├── AppSidebar.tsx  # Sidebar principal
-│   │   └── ui/             # Componentes Radix UI
-│   ├── package.json
-│   └── next.config.js
-│
-└── package.json            # Root workspace
-```
+Defina `ALLOWED_USER_EMAILS` nos dois servicos com uma lista separada por virgula. O MVP e single-user e falha fechado em producao quando essa variavel nao existe. No backend, configure tambem `CORS_ORIGINS` com as origens permitidas.
 
-## 🎨 Features
+O Supabase do 10xVagas deve ser um projeto separado. O schema de `users` reaproveita
+FK, RLS, policies e trigger de criacao da 10xDev, mas nao copia dados nem colunas
+especificas de GitHub, Stripe, creditos ou comunidade.
 
-### ✨ Sidebar Inteligente
+Servicos locais:
 
-A sidebar do projeto suporta **3 modos de visualização**:
+- Frontend: http://localhost:3000
+- Backend: http://localhost:3001
+- Health check: http://localhost:3001/health
+- Readiness do banco: http://localhost:3001/ready
 
-- **Expandida**: Mostra menu completo com ícones e textos
-- **Colapsada**: Apenas ícones, economia de espaço
-- **Hover**: Expande ao passar o mouse, volta ao repouso
-
-Preferências salvas no `localStorage`, funciona perfeitamente em mobile.
-
-### 🔐 Autenticação Pronta
-
-Integração com Supabase Auth configurada:
-- Tipos sincronizados frontend/backend
-- Middlewares de proteção de rota
-- Gerenciamento de sessão
-
-### 🎭 Componentes UI
-
-Usando **shadcn/ui** + **Radix UI**:
-- Botões, Cards, Diálogos
-- Dropdowns, Menus
-- Toast notifications (Sonner)
-- Responsivo e acessível
-
-### 📱 Mobile-First
-
-- Responsive design com Tailwind CSS
-- Sidebar adaptável em mobile
-- API pronta para PWA
-
-## ⌨️ Comandos Disponíveis
-
-### Root (ambos os projetos)
+## Comandos
 
 ```bash
-npm run dev        # Roda frontend + backend
-npm run build      # Build dos dois workspaces
-npm run lint       # ESLint em todos os projetos
+npm run dev              # backend + frontend
+npm run build            # build dos workspaces Node
+npm run typecheck        # TypeScript dos dois lados
+npm run lint             # ESLint dos dois lados
+npm run test:backend     # testes Jest do backend
+npm run test:frontend    # testes Jest do frontend
+npm run test:engine      # testes Python de matching e fontes
+npm run collect:jobs     # atualiza engine/sources/output/live-jobs.json
+npm run profile:import -- --input curriculo.pdf --use-codex
 ```
 
-### Backend (`cd backend`)
+As suites Jest devem ser executadas com arquivo/filtro durante desenvolvimento para nao sobrecarregar o WSL. Consulte [`.claude/CLAUDE.md`](.claude/CLAUDE.md).
 
-```bash
-npm run dev        # Dev server com nodemon
-npm run build      # Compila TypeScript
-npm run start      # Roda o build compilado
-npm run lint       # Verifica ESLint
-npm run lint:fix   # Corrige automaticamente
-npm run test       # Jest tests
-```
+## Fontes de vagas
 
-### Frontend (`cd frontend`)
+Toda fonte automatica implementa o mesmo contrato `SourceAdapter` e produz `SourceJob` normalizado.
 
-```bash
-npm run dev        # Dev server Next.js
-npm run build      # Build otimizado
-npm run start      # Roda o build
-npm run lint       # Verifica ESLint
-```
+| Fonte | Modo | Descricao |
+|---|---|---|
+| Ashby | automatico | API publica de job board |
+| Greenhouse | automatico | Job Board API publica |
+| Lever | automatico | Postings API publica |
+| Remotive | automatico | feed publico de vagas remotas |
+| LinkedIn | assistido | busca humana/link; sem scraping |
+| Indeed | assistido | busca humana/link; sem API publica de candidato |
 
-## 🔧 Configuração
+Registro das fontes: [`engine/sources/registry.json`](engine/sources/registry.json).
 
-### Variáveis de Ambiente
+## Matching
 
-**Backend** (`.env`):
-```env
-PORT=3001
-SUPABASE_URL=https://xxx.supabase.co
-SUPABASE_ANON_KEY=xxx
-SUPABASE_SERVICE_ROLE_KEY=xxx
-```
+O baseline separa rigorosamente:
 
-**Frontend** (`.env.local`):
-```env
-NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=xxx
-```
+- `skills_known`: tecnologias conhecidas, incluindo historico de suporte.
+- `skills_desired`: tecnologias que podem elevar o score.
 
-### TypeScript
+Office 365, AnyDesk, helpdesk, redes e suporte nunca geram pontuacao positiva. Pesos, aliases, penalidades e filtros ficam em [`engine/experiment/config/matching-weights.json`](engine/experiment/config/matching-weights.json).
 
-Projeto com **TypeScript estrito** habilitado:
-- `noImplicitAny`: Todos os tipos explícitos
-- `noImplicitReturns`: Retorno obrigatório em funções
-- `strictNullChecks`: Validação rigorosa de null/undefined
+Protocolo completo: [`engine/experiment/README.md`](engine/experiment/README.md).
 
-## 📚 Padrões de Código
+## Convencoes 10xDev
 
-### Backend
+- Backend: Controller → Model → Routes.
+- API: envelope `{ success: true, data }` / `{ success: false, error }`.
+- Frontend: `apiClient` desembrulha o envelope uma vez.
+- Componentes PascalCase, utilitarios camelCase, banco snake_case, API kebab-case.
+- DDL via Supabase Management API; sem migrations SQL no repositorio.
+- Sessao web via `@supabase/ssr`; autorizacao da API sempre pelo Bearer JWT validado no backend.
+- Acesso do MVP limitado por `ALLOWED_USER_EMAILS` no Proxy e no middleware Node.
+- Conversa, commits e PRs em portugues; codigo-fonte em ingles.
+- Dark mode por tokens sem cores hardcoded nos componentes de produto.
 
-```typescript
-// controllers/UserController.ts
-static async getUser(req: Request, res: Response): Promise<void> {
-  try {
-    const { id } = req.params
-    const user = await UserModel.findById(id)
+## Deploy
 
-    if (!user) {
-      res.status(404).json({ error: 'Usuário não encontrado' })
-      return
-    }
+O workflow Azure esta preparado em [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml), mas os nomes de recursos continuam como placeholders deliberados. O preflight bloqueia deploy ate ACR, Resource Group, Web Apps e URL publica do backend serem provisionados para o 10xVagas.
 
-    res.json({ success: true, data: user })
-  } catch (error) {
-    res.status(500).json({ error: 'Erro interno' })
-  }
-}
-```
-
-### Frontend
-
-```typescript
-// app/(dashboard)/page.tsx
-'use client'
-
-import { useEffect, useState } from 'react'
-
-export default function Dashboard() {
-  const [data, setData] = useState(null)
-
-  useEffect(() => {
-    fetch('/api/data')
-      .then(res => res.json())
-      .then(setData)
-  }, [])
-
-  return <div>{/* conteúdo */}</div>
-}
-```
-
-### Path Aliases
-
-- **Frontend**: `@/*` → caminho raiz
-- **Backend**: `@/*` → `src/*`
-
-Use aliases para imports limpos:
-```typescript
-import { Button } from '@/components/ui/button'
-import { UserModel } from '@/models/UserModel'
-```
-
-## 🚀 Deploy
-
-### Frontend (Vercel)
-
-```bash
-npm run build
-# Faz deploy automático ao fazer push
-```
-
-### Backend (Qualquer Node host)
-
-```bash
-npm run build
-npm start
-```
-
-## 📖 Documentação
-
-- [Next.js Docs](https://nextjs.org/docs)
-- [Express Docs](https://expressjs.com)
-- [Supabase Docs](https://supabase.com/docs)
-- [Tailwind CSS](https://tailwindcss.com/docs)
-- [Radix UI](https://www.radix-ui.com/docs/primitives/overview/introduction)
-
-## 🤝 Contribuindo
-
-1. Crie uma branch para sua feature (`git checkout -b feature/AmazingFeature`)
-2. Commit suas mudanças (`git commit -m 'Add some AmazingFeature'`)
-3. Push para a branch (`git push origin feature/AmazingFeature`)
-4. Abra um Pull Request
-
-## 📝 Licença
-
-MIT - sinta-se livre para usar
-
----
-
-## 💡 Feito com 10xDev
-
-Este template foi estruturado seguindo os **CardFeatures da 10xDev**, uma plataforma que documenta código em múltiplas perspectivas (Setup, API, Deploy, Flow).
-
-### 🎓 Entenda o Fluxo do Projeto
-
-Quer aprender como este projeto funciona? Use a plataforma **10xDev** para:
-
-1. **Estudar ComponenteS**: Veja como a Sidebar foi implementada
-2. **Entender a Arquitetura**: CardFlow mostra o caminho exato dos dados
-3. **Adaptar para seu projeto**: Copie padrões aprovados e customize
-
-### 🚀 Próximos Passos
-
-1. Clone este template
-2. Configure o `.env` com suas credenciais
-3. Rode localmente (`npm run dev`)
-4. Estude os CardFeatures da 10xDev para entender melhor cada camada
-5. Customize e adapte para seu projeto
-
-### 📚 CardFeatures Recomendados
-
-- **Sistema de Autenticação JWT** — entenda como proteger rotas
-- **CRUD Completo** — padrão Controller → Model
-- **Deploy & DevOps** — como colocar em produção
-- **CardFlow** — visualize o fluxo de dados da aplicação
-
-Visite **[10xdev.com.br](https://10xdev.com.br)** para descobrir mais templates e documentação estruturada.
-
----
-
-**Dúvidas?** Abra uma issue ou consulte os CardFeatures na plataforma 10xDev! 🎯
+O engine ainda nao possui container de ferramentas e, portanto, nao entra no workflow atual.

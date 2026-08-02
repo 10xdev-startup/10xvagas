@@ -1,14 +1,29 @@
 {
-  "name": "meu-projeto",
+  "name": "10xvagas",
   "version": "1.0.0",
+  "description": "10xVagas - radar inteligente de oportunidades profissionais",
   "private": true,
   "workspaces": [
     "backend",
     "frontend"
   ],
   "scripts": {
-    "dev": "npm run dev --workspaces",
-    "build": "npm run build --workspaces",
-    "lint": "npm run lint --workspaces"
+    "install:all": "npm install --workspaces",
+    "dev": "concurrently \"npm run dev --workspace=backend\" \"npm run dev --workspace=frontend\"",
+    "build": "npm run build --workspace=backend && npm run build --workspace=frontend",
+    "start": "concurrently \"npm run start --workspace=backend\" \"npm run start --workspace=frontend\"",
+    "lint": "npm run lint --workspace=backend && npm run lint --workspace=frontend",
+    "typecheck": "npm run typecheck --workspace=backend && npm run typecheck --workspace=frontend",
+    "test:backend": "npm run test --workspace=backend",
+    "test:frontend": "npm run test --workspace=frontend",
+    "test:engine": "python3 -m unittest discover -s engine/experiment/tests -v && python3 -m unittest discover -s engine/sources/tests -v && python3 -m unittest discover -s engine/profile/tests -v",
+    "collect:jobs": "python3 -m engine.sources.collect",
+    "profile:import": "python3 -m engine.profile.import_profile"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "engines": {
+    "node": ">=20.19.0"
   }
 }

@@ -35,10 +35,12 @@
 
 ## Projeto
 
-**Meu Projeto** — descreva aqui o que o projeto faz.
+**10xVagas** — radar inteligente que descobre, ranqueia e prepara oportunidades profissionais sem automatizar o envio por padrao.
 
-- **Frontend**: Next.js 15, TypeScript, Tailwind CSS, shadcn/ui (Radix) — `frontend/`
+- **Frontend**: Next.js 16, TypeScript, Tailwind CSS, shadcn/ui (Radix) — `frontend/`
 - **Backend**: Node.js, Express, TypeScript, Supabase (PostgreSQL) — `backend/`
+- **Engine**: Python para ferramentas de Perfil Canonico, parsing, matching e LLM — `engine/`
+- **Worker de browser (planejado)**: Node.js + Playwright; Stagehand apenas como fallback para formularios desconhecidos — `worker/`
 - **Padrao backend**: Controller → Model → Database
 
 ## Comandos
@@ -157,6 +159,7 @@ Convencoes:
 ## Autenticacao
 
 - **Provider**: Supabase Auth (Google OAuth)
+- **Acesso MVP**: `ALLOWED_USER_EMAILS` limita o workspace no Proxy e no backend. Em producao, variavel ausente bloqueia todas as contas.
 - **Tokens**: JWT Bearer tokens em headers `Authorization: Bearer <token>`
 - **Backend**: `supabaseMiddleware` (`@/middleware`) valida o JWT via `auth.getUser(token)`, garante a linha em `users` (cria no 1º login) e injeta `req.user` (`AuthUser`, tipado em todo controller).
 - **Roles**: `req.user.role` (`UserRole = 'user' | 'admin'`). Proteja rotas com `requireRole(...roles)` / `requireAdmin` (`@/middleware`); para mais papeis, edite a union `UserRole`. Roles por recurso (membership) sao um dominio a construir por cima — nao vem no template.
@@ -192,6 +195,24 @@ Use dollar-quoting (`$$...$$`) nas strings dentro do SQL pra nao escapar aspas n
 
 ### Tabelas principais
 
+- **`saved_job`** — shortlist por usuario. O backend aceita um snapshot da vaga para a tela continuar util mesmo quando a fonte sair do ar. Aplicar via Management API:
+  ```sql
+  create table if not exists public.saved_job (
+    id uuid not null default gen_random_uuid() unique,
+    user_id uuid not null references auth.users(id) on delete cascade,
+    job_key text not null,
+    snapshot jsonb not null,
+    created_at timestamptz not null default now(),
+    updated_at timestamptz not null default now(),
+    primary key (user_id, job_key)
+  );
+  alter table public.saved_job enable row level security;
+  create policy "saved_job_select_own" on public.saved_job for select to authenticated using ((select auth.uid()) = user_id);
+  create policy "saved_job_insert_own" on public.saved_job for insert to authenticated with check ((select auth.uid()) = user_id);
+  create policy "saved_job_update_own" on public.saved_job for update to authenticated using ((select auth.uid()) = user_id) with check ((select auth.uid()) = user_id);
+  create policy "saved_job_delete_own" on public.saved_job for delete to authenticated using ((select auth.uid()) = user_id);
+  ```
+
 - **`users`** — perfil da aplicacao, espelha `auth.users`. Criada pelo `supabaseMiddleware` no 1º login (role `user`, status `active`). DDL para aplicar via curl acima:
   ```sql
   create table if not exists public.users (
@@ -202,7 +223,89 @@ Use dollar-quoting (`$$...$$`) nas strings dentro do SQL pra nao escapar aspas n
     created_at timestamptz not null default now(),
     updated_at timestamptz not null default now()
   );
+  alter table public.users enable row level security;
+
+  grant select, insert, update, delete on public.users to authenticated;
+
+  create policy "users_select_own"
+    on public.users for select
+    to authenticated
+    using ((select auth.uid()) = id);
+
+  create policy "users_update_own"
+    on public.users for update
+    to authenticated
+    using ((select auth.uid()) = id)
+    with check ((select auth.uid()) = id);
+
+  create or replace function public.handle_new_user()
+  returns trigger
+  language plpgsql
+  security definer
+  set search_path = 'public', 'extensions'
+  as $$
+  begin
+    insert into public.users (id, email, name, avatar_url)
+    values (
+      new.id,
+      new.email,
+      coalesce(
+        new.raw_user_meta_data->>'name',
+        new.raw_user_meta_data->>'full_name',
+        new.raw_user_meta_data->>'first_name',
+        split_part(coalesce(new.email, ''), '@', 1)
+      ),
+      new.raw_user_meta_data->>'avatar_url'
+    )
+    on conflict (id) do nothing;
+    return new;
+  end;
+  $$;
+
+  drop trigger if exists on_auth_user_created on auth.users;
+  create trigger on_auth_user_created
+    after insert on auth.users
+    for each row execute function public.handle_new_user();
+
+  create or replace function public.update_users_updated_at()
+  returns trigger
+  language plpgsql
+  set search_path = ''
+  as $$ begin new.updated_at = now(); return new; end; $$;
+
+  drop trigger if exists update_users_updated_at on public.users;
+  create trigger update_users_updated_at
+    before update on public.users
+    for each row execute function public.update_users_updated_at();
+
+  create or replace function public.guard_users_sensitive_columns()
+  returns trigger
+  language plpgsql
+  security definer
+  set search_path = ''
+  as $$
+  begin
+    if auth.role() in ('anon', 'authenticated') and (
+      new.role is distinct from old.role or
+      new.status is distinct from old.status
+    ) then
+      raise exception 'Alteracao de coluna sensivel nao permitida para este papel';
+    end if;
+    return new;
+  end;
+  $$;
+
+  drop trigger if exists guard_users_sensitive_columns on public.users;
+  create trigger guard_users_sensitive_columns
+    before update on public.users
+    for each row execute function public.guard_users_sensitive_columns();
   ```
+
+  Esse schema espelha apenas o nucleo de identidade da 10xDev. Campos de GitHub,
+  Stripe, creditos, debate, convite e compartilhamento pertencem ao dominio do
+  produto antigo e nao entram no 10xVagas. O trigger cria `public.users` no mesmo
+  instante em que o Supabase Auth cria `auth.users`; o `supabaseMiddleware`
+  continua com o upsert como fallback idempotente.
 
 ## Arquivos-chave
 

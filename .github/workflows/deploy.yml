@@ -6,9 +6,10 @@
 #   2. Configure os Secrets do repo (Settings → Secrets and variables → Actions):
 #      - AZURE_CLIENT_ID / AZURE_TENANT_ID / AZURE_SUBSCRIPTION_ID  (service principal)
 #      - NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY    (baked no build do front)
+#      - SUPABASE_SERVICE_ROLE_KEY / ALLOWED_USER_EMAILS             (runtime, nunca baked no front)
 #   (Dica: rode a skill /deploy-azure pro setup guiado da infra na primeira vez.)
 
-name: Deploy Docker to Azure
+name: Deploy Docker to Azure - 10xVagas
 
 on:
   push:
@@ -16,13 +17,13 @@ on:
   workflow_dispatch:
 
 env:
-  ACR_NAME: cr10xdevstarterkit # Azure Container Registry (so o nome, sem .azurecr.io)
-  RESOURCE_GROUP: resource-10xdev-starter-kit
-  BACKEND_APP: web-backend-10xdev-starter-kit # nome do Web App do backend
-  FRONTEND_APP: web-frontend-10xdev-starter-kit # nome do Web App do frontend
-  BACKEND_IMAGE: 10xdev-starter-kit-backend
-  FRONTEND_IMAGE: 10xdev-starter-kit-frontend
-  BACKEND_PUBLIC_URL: https://web-backend-10xdev-starter-kit.azurewebsites.net # backend de prod (build-arg do front)
+  ACR_NAME: seu-acr-10xvagas # Azure Container Registry (so o nome, sem .azurecr.io)
+  RESOURCE_GROUP: seu-resource-group-10xvagas
+  BACKEND_APP: seu-web-backend-10xvagas # nome do Web App do backend
+  FRONTEND_APP: seu-web-frontend-10xvagas # nome do Web App do frontend
+  BACKEND_IMAGE: 10xvagas-backend
+  FRONTEND_IMAGE: 10xvagas-frontend
+  BACKEND_PUBLIC_URL: https://seu-backend-10xvagas.azurewebsites.net # backend de prod (build-arg do front)
 
 jobs:
   docker-deploy:
@@ -43,6 +44,26 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Quality gate
+        run: |
+          npm ci
+          npm run typecheck
+          npm run lint
+          npm test --workspace=backend -- --runInBand
+          npm test --workspace=frontend -- --runInBand
+          npm run test:engine
+
       - name: Login to Azure
         uses: azure/login@v2
         with:
@@ -55,7 +76,7 @@ jobs:
 
       - name: Build and push backend image
         run: |
-          docker build -t ${{ env.ACR_NAME }}.azurecr.io/${{ env.BACKEND_IMAGE }}:latest ./backend
+          docker build -f backend/Dockerfile -t ${{ env.ACR_NAME }}.azurecr.io/${{ env.BACKEND_IMAGE }}:latest .
           docker push ${{ env.ACR_NAME }}.azurecr.io/${{ env.BACKEND_IMAGE }}:latest
 
       - name: Build and push frontend image
@@ -66,7 +87,7 @@ jobs:
             --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }} \
             --build-arg NEXT_PUBLIC_API_URL=${{ env.BACKEND_PUBLIC_URL }} \
             -t ${{ env.ACR_NAME }}.azurecr.io/${{ env.FRONTEND_IMAGE }}:latest \
-            ./frontend
+            -f frontend/Dockerfile .
           docker push ${{ env.ACR_NAME }}.azurecr.io/${{ env.FRONTEND_IMAGE }}:latest
 
       - name: Deploy containers to Azure Web Apps
@@ -79,6 +100,24 @@ jobs:
             --name ${{ env.FRONTEND_APP }} \
             --resource-group ${{ env.RESOURCE_GROUP }} \
             --docker-custom-image-name ${{ env.ACR_NAME }}.azurecr.io/${{ env.FRONTEND_IMAGE }}:latest
+
+      - name: Configure runtime settings
+        run: |
+          az webapp config appsettings set \
+            --name ${{ env.BACKEND_APP }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --settings \
+              SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }} \
+              SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }} \
+              ALLOWED_USER_EMAILS=${{ secrets.ALLOWED_USER_EMAILS }} \
+              CORS_ORIGINS=https://${{ env.FRONTEND_APP }}.azurewebsites.net \
+              WEBSITES_PORT=3001
+          az webapp config appsettings set \
+            --name ${{ env.FRONTEND_APP }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --settings \
+              ALLOWED_USER_EMAILS=${{ secrets.ALLOWED_USER_EMAILS }} \
+              WEBSITES_PORT=8080
 
       - name: Restart Azure Web Apps
         run: |

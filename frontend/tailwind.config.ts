@@ -10,7 +10,10 @@ const config: Config = {
     "*.{js,ts,jsx,tsx,mdx}"
   ],
   theme: {
-  	extend: {
+    extend: {
+      fontFamily: {
+        sans: ['Geist', 'Inter Tight', 'Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+      },
   		colors: {
   			background: 'hsl(var(--background))',
   			foreground: 'hsl(var(--foreground))',
@@ -22,10 +25,31 @@ const config: Config = {
   				DEFAULT: 'hsl(var(--popover))',
   				foreground: 'hsl(var(--popover-foreground))'
   			},
-  			primary: {
+			primary: {
   				DEFAULT: 'hsl(var(--primary))',
   				foreground: 'hsl(var(--primary-foreground))'
-  			},
+			},
+			brand: {
+				DEFAULT: 'hsl(var(--brand))',
+				foreground: 'hsl(var(--brand-foreground))'
+			},
+			signal: {
+				DEFAULT: 'hsl(var(--signal))',
+				foreground: 'hsl(var(--signal-foreground))'
+			},
+			'match-strong': {
+				DEFAULT: 'hsl(var(--match-strong))',
+				foreground: 'hsl(var(--match-strong-foreground))'
+			},
+			'match-partial': {
+				DEFAULT: 'hsl(var(--match-partial))',
+				foreground: 'hsl(var(--match-partial-foreground))'
+			},
+			'match-weak': {
+				DEFAULT: 'hsl(var(--match-weak))',
+				foreground: 'hsl(var(--match-weak-foreground))'
+			},
+			overlay: 'hsl(var(--overlay))',
   			secondary: {
   				DEFAULT: 'hsl(var(--secondary))',
   				foreground: 'hsl(var(--secondary-foreground))'
@@ -56,11 +80,15 @@ const config: Config = {
   				ring: 'hsl(var(--sidebar-ring))'
   			}
   		},
-  		borderRadius: {
+		borderRadius: {
   			lg: 'var(--radius)',
   			md: 'calc(var(--radius) - 2px)',
   			sm: 'calc(var(--radius) - 4px)'
-  		},
+		},
+		boxShadow: {
+			'brand-glow': '0 0 24px hsl(var(--brand) / 0.25)',
+			'surface': '0 18px 60px hsl(var(--foreground) / 0.06)'
+		},
   		keyframes: {
   			'accordion-down': {
   				from: {
