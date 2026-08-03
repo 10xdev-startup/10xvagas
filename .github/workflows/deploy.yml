@@ -6,7 +6,10 @@
 #   2. Configure os Secrets do repo (Settings → Secrets and variables → Actions):
 #      - AZURE_CLIENT_ID / AZURE_TENANT_ID / AZURE_SUBSCRIPTION_ID  (service principal)
 #      - NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY    (baked no build do front)
-#      - SUPABASE_SERVICE_ROLE_KEY / ALLOWED_USER_EMAILS             (runtime, nunca baked no front)
+#      - SUPABASE_SERVICE_ROLE_KEY                                   (runtime, nunca baked no front)
+#   3. Opcional: CORS_ORIGINS (lista separada por virgula). Sem ele, o backend
+#      libera so a URL do Web App do front. Defina quando plugar dominio proprio
+#      — precisa listar apex E www, sao origens distintas pro browser.
 #   (Dica: rode a skill /deploy-azure pro setup guiado da infra na primeira vez.)
 
 name: Deploy Docker to Azure - 10xVagas
@@ -109,14 +112,12 @@ jobs:
             --settings \
               SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }} \
               SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }} \
-              ALLOWED_USER_EMAILS=${{ secrets.ALLOWED_USER_EMAILS }} \
-              CORS_ORIGINS=https://${{ env.FRONTEND_APP }}.azurewebsites.net \
+              CORS_ORIGINS=${{ secrets.CORS_ORIGINS || format('https://{0}.azurewebsites.net', env.FRONTEND_APP) }} \
               WEBSITES_PORT=3001
           az webapp config appsettings set \
             --name ${{ env.FRONTEND_APP }} \
             --resource-group ${{ env.RESOURCE_GROUP }} \
             --settings \
-              ALLOWED_USER_EMAILS=${{ secrets.ALLOWED_USER_EMAILS }} \
               WEBSITES_PORT=8080
 
       - name: Restart Azure Web Apps
