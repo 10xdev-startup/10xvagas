@@ -4,6 +4,7 @@ import dotenv from 'dotenv'
 import { sendError, sendOk } from '@/utils/apiResponse'
 import { userRoutes } from '@/routes/userRoutes'
 import { savedJobRoutes } from '@/routes/savedJobRoutes'
+import { jobRoutes } from '@/routes/jobRoutes'
 import { errorHandler } from '@/middleware'
 import { supabase } from '@/database/supabase'
 
@@ -33,11 +34,13 @@ app.get('/health', (_req, res) => {
 })
 
 app.get('/ready', async (_req, res) => {
-  const [users, savedJobs] = await Promise.all([
+  const [users, savedJobs, jobs, jobMatches] = await Promise.all([
     supabase.from('users').select('id', { count: 'exact', head: true }),
     supabase.from('saved_job').select('id', { count: 'exact', head: true }),
+    supabase.from('job').select('id', { count: 'exact', head: true }),
+    supabase.from('job_match').select('job_id', { count: 'exact', head: true }),
   ])
-  if (users.error || savedJobs.error) {
+  if (users.error || savedJobs.error || jobs.error || jobMatches.error) {
     sendError(res, 503, 'Banco ainda nao esta pronto para trafego autenticado.', 'DATABASE_NOT_READY')
     return
   }
@@ -47,6 +50,7 @@ app.get('/ready', async (_req, res) => {
 // Dominio de referencia: usuario (Controller → Model → Database).
 app.use('/users', userRoutes)
 app.use('/saved-jobs', savedJobRoutes)
+app.use('/jobs', jobRoutes)
 
 // Handler de erro central — por ULTIMO, depois das rotas (serializa AppError no envelope).
 app.use(errorHandler)
