@@ -8,6 +8,7 @@ export interface BillingPack {
 
 export interface BillingStatus {
   balanceCents: number
+  checkoutEnabled: boolean
   currency: string
   hasCustomer: boolean
   packs: BillingPack[]

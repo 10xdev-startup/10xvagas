@@ -60,6 +60,10 @@ export function getFeatureMeterEventName(feature: BillingFeature): string {
   return FEATURE_EVENT_NAMES[feature]
 }
 
+export function isStripeCheckoutEnabled(): boolean {
+  return process.env['STRIPE_CHECKOUT_ENABLED']?.trim().toLowerCase() === 'true'
+}
+
 export const StripeService = {
   async listPacks(): Promise<BillingPack[]> {
     const lookupKeys = getPackLookupKeys()

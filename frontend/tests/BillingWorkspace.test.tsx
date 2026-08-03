@@ -16,6 +16,7 @@ describe('BillingWorkspace', () => {
   it('mostra saldo e pacotes retornados pela API', async () => {
     jest.mocked(apiClient.get).mockResolvedValue({
       balanceCents: 1250,
+      checkoutEnabled: true,
       currency: 'BRL',
       hasCustomer: true,
       packs: [

@@ -1,7 +1,7 @@
 import type { Request, Response } from 'express'
 import type Stripe from 'stripe'
 import { BillingModel } from '@/models/BillingModel'
-import { StripeService } from '@/services/stripeService'
+import { isStripeCheckoutEnabled, StripeService } from '@/services/stripeService'
 import type { CheckoutMetadata } from '@/types/billing'
 import { AppError } from '@/utils/AppError'
 import { sendOk } from '@/utils/apiResponse'
@@ -40,6 +40,7 @@ export const BillingController = {
     if (!customerId) {
       sendOk(res, {
         balanceCents: 0,
+        checkoutEnabled: isStripeCheckoutEnabled(),
         currency: 'BRL',
         hasCustomer: false,
         packs: await packsPromise,
@@ -51,6 +52,7 @@ export const BillingController = {
     if (!customer) {
       sendOk(res, {
         balanceCents: 0,
+        checkoutEnabled: isStripeCheckoutEnabled(),
         currency: 'BRL',
         hasCustomer: false,
         packs: await packsPromise,
@@ -62,12 +64,20 @@ export const BillingController = {
       StripeService.getBalance(customer),
       packsPromise,
     ])
-    sendOk(res, { ...balance, hasCustomer: true, packs })
+    sendOk(res, {
+      ...balance,
+      checkoutEnabled: isStripeCheckoutEnabled(),
+      hasCustomer: true,
+      packs,
+    })
   },
 
   async checkout(req: Request, res: Response): Promise<void> {
     const user = req.user
     if (!user) throw new AppError(401, 'Nao autenticado', 'AUTH_REQUIRED')
+    if (!isStripeCheckoutEnabled()) {
+      throw new AppError(503, 'Compra de creditos ainda nao liberada', 'CHECKOUT_DISABLED')
+    }
     const lookupKey = (req.body as { lookupKey?: unknown } | undefined)?.lookupKey
     if (typeof lookupKey !== 'string' || !lookupKey.trim()) {
       throw new AppError(422, 'lookupKey e obrigatorio', 'LOOKUP_KEY_REQUIRED')

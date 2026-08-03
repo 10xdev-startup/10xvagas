@@ -58,6 +58,7 @@ O backend Node emite por `backend/src/services/stripeService.ts`. O engine Pytho
 ```dotenv
 STRIPE_SECRET_KEY=sk_test_...
 STRIPE_WEBHOOK_SECRET=whsec_...
+STRIPE_CHECKOUT_ENABLED=false
 STRIPE_CREDITS_PACK_LOOKUP_KEYS=10xvagas_credits_brl_10,10xvagas_credits_brl_25,10xvagas_credits_brl_50,10xvagas_credits_brl_100
 FRONTEND_URL=http://localhost:3000
 ```
@@ -148,6 +149,7 @@ create unique index if not exists users_stripe_customer_id_key
 - [ ] Um único meter ativo por `event_name` esperado.
 - [ ] `10xvagas_tokens` com `model` e `token_type`.
 - [ ] Product/Prices com namespace `10xvagas`.
+- [ ] `STRIPE_CHECKOUT_ENABLED` permanece `false` ate existir politica de debito por tarefa.
 - [ ] Customer e Checkout com `product` e `platform`.
 - [ ] Webhook fail closed e assinatura validada sobre raw body.
 - [ ] Checkout repetido não credita duas vezes (idempotency key pelo PaymentIntent).

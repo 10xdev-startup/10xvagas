@@ -95,16 +95,26 @@ export function BillingWorkspace() {
               <p className="mt-2 text-xs leading-5 text-muted-foreground">Saldo integral para tarefas inteligentes do seu pipeline.</p>
               <Button
                 className="mt-5 w-full justify-between"
-                disabled={checkoutKey !== null}
+                disabled={checkoutKey !== null || !status?.checkoutEnabled}
                 onClick={() => void startCheckout(pack.lookupKey)}
                 variant={index === 1 ? 'default' : 'outline'}
               >
-                {checkoutKey === pack.lookupKey ? 'Abrindo Stripe…' : 'Adicionar créditos'}
+                {checkoutKey === pack.lookupKey
+                  ? 'Abrindo Stripe…'
+                  : status?.checkoutEnabled
+                    ? 'Adicionar créditos'
+                    : 'Em breve'}
                 <ArrowUpRight className="size-4" />
               </Button>
             </article>
           ))}
         </div>
+
+        {!loading && status && !status.checkoutEnabled && status.packs.length > 0 && (
+          <p className="mt-4 border-l-2 border-brand pl-3 text-xs leading-5 text-muted-foreground">
+            A recarga será liberada junto da política de consumo por tarefa. Nenhuma compra pode ser iniciada neste ambiente agora.
+          </p>
+        )}
 
         {!loading && status?.packs.length === 0 && (
           <div className="flex min-h-48 flex-col items-center justify-center border border-dashed border-border bg-card/40 p-8 text-center">
