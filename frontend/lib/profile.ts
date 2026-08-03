@@ -11,6 +11,10 @@ export type CanonicalProfile = {
   facts_pending_confirmation: Array<{ question_pt: string; question_en?: string }>
 }
 
+/**
+ * Projeta somente o que a UI usa. O documento guardado tambem contem contato e
+ * narrativas privadas, que nunca devem atravessar a fronteira Server/Client.
+ */
 function toPublicProfile(raw: CanonicalProfile): CanonicalProfile {
   return {
     identity: {
@@ -30,10 +34,17 @@ function toPublicProfile(raw: CanonicalProfile): CanonicalProfile {
   }
 }
 
-/** A RLS de `profile` resolve o documento da sessao sem aceitar `user_id` da UI. */
+/**
+ * Perfil do usuario da sessao. O isolamento vem da RLS de `public.profile`
+ * (`auth.uid() = user_id`), nao de filtro na aplicacao.
+ *
+ * Devolve `null` quando a conta ainda nao tem perfil — o chamador mostra
+ * onboarding em vez do perfil de outra pessoa.
+ */
 export async function getCanonicalProfile(): Promise<CanonicalProfile | null> {
   const supabase = await createClient()
   const { data, error } = await supabase.from('profile').select('document').maybeSingle()
+
   if (error || !data) return null
   return toPublicProfile(data.document as CanonicalProfile)
 }
