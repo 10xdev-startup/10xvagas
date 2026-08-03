@@ -11,7 +11,6 @@ RUN npm ci --workspace=frontend --include-workspace-root
 FROM dependencies AS builder
 
 COPY frontend ./frontend
-COPY engine ./engine
 
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
@@ -44,8 +43,6 @@ RUN npm ci --omit=dev --workspace=frontend --include-workspace-root \
 
 COPY --from=builder --chown=nextjs:nodejs /app/frontend/.next ./frontend/.next
 COPY --from=builder --chown=nextjs:nodejs /app/frontend/public ./frontend/public
-COPY --from=builder --chown=nextjs:nodejs /app/engine ./engine
-
 WORKDIR /app/frontend
 USER nextjs
 

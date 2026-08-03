@@ -25,7 +25,8 @@ npm test -- tests/JobRadar.test.tsx --runInBand
 - `services/`: transporte HTTP via `apiClient`.
 - `tests/`: testes Jest + Testing Library.
 
-Durante o experimento, `lib/experiment.ts` le snapshots do engine no monorepo. Em producao, esse acesso deve migrar para backend/banco.
+Vagas e matches sao consumidos do backend por `services/jobService.ts`. O frontend nao le
+artefatos do engine nem leva o diretorio `engine/` em sua imagem Docker.
 
 ## Login local
 

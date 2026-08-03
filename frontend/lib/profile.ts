@@ -1,7 +1,6 @@
 import 'server-only'
 
-import { readFile } from 'node:fs/promises'
-import path from 'node:path'
+import { createClient } from '@/lib/supabase/server'
 
 export type CanonicalProfile = {
   identity: { full_name: string; headline: { pt: string; en: string }; location: { city: string; state: string; country: string } }
@@ -12,12 +11,7 @@ export type CanonicalProfile = {
   facts_pending_confirmation: Array<{ question_pt: string; question_en?: string }>
 }
 
-export async function getCanonicalProfile(): Promise<CanonicalProfile> {
-  const file = path.resolve(process.cwd(), '../engine/experiment/data/canonical-profile.json')
-  const raw = JSON.parse(await readFile(file, 'utf-8')) as CanonicalProfile
-
-  // Projeta somente o que a UI usa. O JSON de origem tambem contem contato e
-  // narrativas privadas, que nunca devem atravessar a fronteira Server/Client.
+function toPublicProfile(raw: CanonicalProfile): CanonicalProfile {
   return {
     identity: {
       full_name: raw.identity.full_name,
@@ -34,4 +28,12 @@ export async function getCanonicalProfile(): Promise<CanonicalProfile> {
     experience: raw.experience,
     facts_pending_confirmation: raw.facts_pending_confirmation,
   }
+}
+
+/** A RLS de `profile` resolve o documento da sessao sem aceitar `user_id` da UI. */
+export async function getCanonicalProfile(): Promise<CanonicalProfile | null> {
+  const supabase = await createClient()
+  const { data, error } = await supabase.from('profile').select('document').maybeSingle()
+  if (error || !data) return null
+  return toPublicProfile(data.document as CanonicalProfile)
 }
