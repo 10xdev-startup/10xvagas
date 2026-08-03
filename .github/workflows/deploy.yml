@@ -20,13 +20,13 @@ on:
   workflow_dispatch:
 
 env:
-  ACR_NAME: seu-acr-10xvagas # Azure Container Registry (so o nome, sem .azurecr.io)
-  RESOURCE_GROUP: seu-resource-group-10xvagas
-  BACKEND_APP: seu-web-backend-10xvagas # nome do Web App do backend
-  FRONTEND_APP: seu-web-frontend-10xvagas # nome do Web App do frontend
+  ACR_NAME: cr10xvagas # Azure Container Registry (so o nome, sem .azurecr.io)
+  RESOURCE_GROUP: resource-10xvagas
+  BACKEND_APP: web-backend-10xvagas # nome do Web App do backend
+  FRONTEND_APP: web-frontend-10xvagas # nome do Web App do frontend
   BACKEND_IMAGE: 10xvagas-backend
   FRONTEND_IMAGE: 10xvagas-frontend
-  BACKEND_PUBLIC_URL: https://seu-backend-10xvagas.azurewebsites.net # backend de prod (build-arg do front)
+  BACKEND_PUBLIC_URL: https://web-backend-10xvagas.azurewebsites.net # backend de prod (build-arg do front)
 
 jobs:
   docker-deploy:
