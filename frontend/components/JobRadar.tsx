@@ -1,11 +1,13 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { Bookmark, BookmarkCheck, BriefcaseBusiness, Building2, CheckCircle2, ChevronLeft, CircleDollarSign, Clock3, ExternalLink, FileSearch, Globe2, MapPin, Radar, Search, TriangleAlert } from 'lucide-react'
+import Link from 'next/link'
+import { Bookmark, BookmarkCheck, BriefcaseBusiness, Building2, CheckCircle2, ChevronLeft, CircleDollarSign, Clock3, ExternalLink, FileSearch, Globe2, Link2, MapPin, Radar, Search, TriangleAlert } from 'lucide-react'
 import { toast } from 'sonner'
 import type { RadarJob, SourceStatus } from '@/types/job'
 import { cn } from '@/lib/utils'
 import { useSavedJobs } from '@/lib/savedJobsStore'
+import { jobPath } from '@/lib/resourceUrl'
 import { useSearchPreferences } from '@/lib/searchPreferencesStore'
 
 type MarketFilter = 'all' | 'brazil' | 'international'
@@ -151,6 +153,9 @@ function JobDossier({ job, onBack, onToggleSaved, saved }: { job: RadarJob; onBa
             <button aria-label={saved ? 'Remover das vagas salvas' : 'Salvar vaga'} aria-pressed={saved} className="inline-flex size-10 items-center justify-center border border-border bg-card text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" onClick={onToggleSaved} type="button">
               {saved ? <BookmarkCheck className="size-4" /> : <Bookmark className="size-4" />}
             </button>
+            <Link className="inline-flex h-10 items-center gap-2 border border-border bg-card px-4 text-xs font-semibold text-foreground transition hover:bg-muted" href={jobPath(job)}>
+              Abrir página <Link2 className="size-3.5" />
+            </Link>
             <a className="inline-flex h-10 items-center gap-2 bg-foreground px-4 text-xs font-semibold text-background transition hover:opacity-85" href={job.applyUrl ?? job.sourceUrl} rel="noreferrer" target="_blank">
               Ver vaga <ExternalLink className="size-3.5" />
             </a>

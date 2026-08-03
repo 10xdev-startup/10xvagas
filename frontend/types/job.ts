@@ -1,5 +1,8 @@
 export type RadarJob = {
+  /** Identidade interna. Usada em API, shortlist e filtros — nunca na URL. */
   id: string
+  /** Forma publica da URL (`<decorativo>-<sufixo>`). Ver lib/urlSlug.ts. */
+  publicId: string
   market: 'brazil' | 'international'
   company: string
   title: string

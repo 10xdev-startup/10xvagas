@@ -13,6 +13,7 @@ jest.mock('../lib/savedJobsStore', () => ({
 const jobs: RadarJob[] = [
   {
     id: 'br-1',
+    publicId: 'desenvolvedor-full-stack-empresa-brasil-aaaaaaaaaa',
     market: 'brazil',
     company: 'Empresa Brasil',
     title: 'Desenvolvedor Full Stack',
@@ -35,6 +36,7 @@ const jobs: RadarJob[] = [
   },
   {
     id: 'int-1',
+    publicId: 'software-engineer-remote-company-bbbbbbbbbb',
     market: 'international',
     company: 'Remote Company',
     title: 'Software Engineer',

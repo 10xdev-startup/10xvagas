@@ -3,6 +3,7 @@ import 'server-only'
 import { readFile } from 'node:fs/promises'
 import path from 'node:path'
 import type { RadarJob, SourceStatus } from '@/types/job'
+import { buildPublicId } from '@/lib/urlSlug'
 
 export type { RadarJob, SourceStatus } from '@/types/job'
 
@@ -116,6 +117,7 @@ export async function getExperimentDashboardData(): Promise<ExperimentDashboardD
       const liveJob = liveByUrl.get(canonicalUrl(match.source_url))
       return [{
         id: match.id,
+        publicId: buildPublicId(match.id, [match.title, match.company]),
         market: match.market,
         company: match.company,
         title: match.title,
@@ -142,6 +144,7 @@ export async function getExperimentDashboardData(): Promise<ExperimentDashboardD
     .filter((job) => !matchedUrls.has(canonicalUrl(job.source_url)))
     .map<RadarJob>((job) => ({
       id: `${job.source}:${job.external_id}`,
+      publicId: buildPublicId(`${job.source}:${job.external_id}`, [job.title, job.company]),
       market: job.market,
       company: job.company,
       title: job.title,
