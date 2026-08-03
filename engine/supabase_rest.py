@@ -66,4 +66,3 @@ class SupabaseRestClient:
         if not content:
             return None
         return json.loads(content.decode("utf-8"))
-

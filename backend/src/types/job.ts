@@ -106,4 +106,3 @@ export function rowToRadarJob(row: JobRow, match: JobMatchRow | null): RadarJob 
     status: match ? 'matched' : 'new',
   }
 }
-

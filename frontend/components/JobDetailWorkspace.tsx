@@ -32,4 +32,3 @@ export function JobDetailWorkspace({ publicId }: { publicId: string }) {
     </article>
   )
 }
-

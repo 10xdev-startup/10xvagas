@@ -4,4 +4,3 @@ export default async function JobPage({ params }: { params: Promise<{ publicId: 
   const { publicId } = await params
   return <JobDetailWorkspace publicId={publicId} />
 }
-

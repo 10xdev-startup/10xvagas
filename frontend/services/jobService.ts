@@ -5,4 +5,3 @@ export const jobService = {
   list: () => apiClient.get<JobListResponse>('/jobs'),
   getById: (idOrPublicId: string) => apiClient.get<RadarJob>(`/jobs/${encodeURIComponent(idOrPublicId)}`),
 }
-

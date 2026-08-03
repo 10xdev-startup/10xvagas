@@ -17,4 +17,3 @@ export function CanonicalUrl({ canonicalPath }: { canonicalPath: string }): null
 
   return null
 }
-

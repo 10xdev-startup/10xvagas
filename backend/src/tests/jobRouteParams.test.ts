@@ -59,4 +59,3 @@ describe('resolveJobIdParam', () => {
     error.mockRestore()
   })
 })
-

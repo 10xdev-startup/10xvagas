@@ -8,4 +8,3 @@ export function jobPath(job: Pick<RadarJob, 'publicId'>): string {
 export function jobShareUrl(job: Pick<RadarJob, 'publicId'>, origin: string): string {
   return new URL(jobPath(job), origin).toString()
 }
-

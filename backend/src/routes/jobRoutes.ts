@@ -11,4 +11,3 @@ router.get('/', JobController.list)
 router.get('/:id', JobController.getById)
 
 export { router as jobRoutes }
-

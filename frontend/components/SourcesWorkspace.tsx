@@ -28,4 +28,3 @@ export function SourcesWorkspace() {
   if (sources) return <SourcesLedger sources={sources} />
   return <main className="mx-auto flex min-h-[520px] w-full max-w-[1450px] items-center justify-center border border-border bg-card p-8"><div className="text-center">{failed ? <><p className="text-sm font-semibold">As fontes não responderam.</p><Button className="mt-4" onClick={load} variant="outline"><RotateCcw />Tentar novamente</Button></> : <><LoaderCircle className="mx-auto size-6 animate-spin text-brand" /><p className="mt-3 text-sm font-medium">Lendo o estado das fontes</p></>}</div></main>
 }
-
