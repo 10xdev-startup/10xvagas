@@ -68,6 +68,18 @@ export interface SourceStatus {
   mode: 'automatic' | 'assisted'
   status: 'ok' | 'error' | 'assisted' | 'unsupported'
   count: number
+  lastRunAt: string | null
+  error: string | null
+}
+
+export interface SourceRunRow {
+  source_id: string
+  source_label: string
+  mode: SourceStatus['mode']
+  status: SourceStatus['status']
+  job_count: number
+  error_message: string | null
+  collected_at: string
 }
 
 export interface JobListResponse {
@@ -105,4 +117,21 @@ export function rowToRadarJob(row: JobRow, match: JobMatchRow | null): RadarJob 
     skills: match?.skills ?? [],
     status: match ? 'matched' : 'new',
   }
+}
+
+export function sourceRunsToStatuses(rows: SourceRunRow[]): SourceStatus[] {
+  const latest = new Map<string, SourceStatus>()
+  for (const row of rows) {
+    if (latest.has(row.source_id)) continue
+    latest.set(row.source_id, {
+      id: row.source_id,
+      label: row.source_label,
+      mode: row.mode,
+      status: row.status,
+      count: row.job_count,
+      lastRunAt: row.collected_at,
+      error: row.error_message,
+    })
+  }
+  return [...latest.values()]
 }

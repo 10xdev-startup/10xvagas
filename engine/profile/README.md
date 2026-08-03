@@ -65,3 +65,15 @@ Prioridades aceitas: `1` (secundaria), `2` (relevante), `3` (principal).
 python3 -m unittest discover -s engine/profile/tests -v
 python3 -m compileall -q engine/profile
 ```
+
+## Sincronizacao com o Supabase
+
+Depois da revisao humana, associe o perfil ao usuario de destino de forma
+explicita. O engine nao escolhe o primeiro usuario do banco:
+
+```bash
+PROFILE_USER_ID="<uuid-do-usuario>" npm run profile:sync
+```
+
+Para sincronizar outro arquivo, use `--profile caminho/perfil.json`. O comando
+valida os campos exigidos pelo matcher e faz upsert somente da linha informada.

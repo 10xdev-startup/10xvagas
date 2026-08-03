@@ -16,9 +16,12 @@
     "typecheck": "npm run typecheck --workspace=backend && npm run typecheck --workspace=frontend",
     "test:backend": "npm run test --workspace=backend",
     "test:frontend": "npm run test --workspace=frontend",
-    "test:engine": "python3 -m unittest discover -s engine/experiment/tests -v && python3 -m unittest discover -s engine/sources/tests -v && python3 -m unittest discover -s engine/profile/tests -v",
+    "test:engine": "python3 -m unittest discover -s engine/experiment/tests -v && python3 -m unittest discover -s engine/sources/tests -v && python3 -m unittest discover -s engine/profile/tests -v && python3 -m unittest discover -s engine/matching/tests -v",
     "collect:jobs": "python3 -m engine.sources.collect",
-    "profile:import": "python3 -m engine.profile.import_profile"
+    "profile:import": "python3 -m engine.profile.import_profile",
+    "profile:sync": "python3 -m engine.profile.sync_profile",
+    "engine:cycle": "python3 -m engine.run_cycle",
+    "match:jobs": "python3 -m engine.matching.live"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"

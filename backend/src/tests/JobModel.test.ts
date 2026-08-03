@@ -51,15 +51,20 @@ describe('JobModel.listByUser', () => {
   })
 
   it('restringe a consulta de matches por user_id mesmo usando service-role', async () => {
-    const order = jest.fn().mockResolvedValue({ data: [], error: null } as never)
+    const jobOrder = jest.fn().mockResolvedValue({ data: [], error: null } as never)
     const userEq = jest.fn().mockResolvedValue({ data: [], error: null } as never)
+    const sourceLimit = jest.fn().mockResolvedValue({ data: [], error: null } as never)
+    const sourceOrder = jest.fn().mockReturnValue({ limit: sourceLimit })
     fromMock.mockImplementation((table: unknown) => {
-      if (table === 'job') return { select: jest.fn().mockReturnValue({ order }) }
-      return { select: jest.fn().mockReturnValue({ eq: userEq }) }
+      if (table === 'job') return { select: jest.fn().mockReturnValue({ order: jobOrder }) }
+      if (table === 'job_match') return { select: jest.fn().mockReturnValue({ eq: userEq }) }
+      return { select: jest.fn().mockReturnValue({ order: sourceOrder }) }
     })
 
-    await expect(JobModel.listByUser('user-1')).resolves.toEqual({ jobs: [], collectedAt: null })
+    await expect(JobModel.listByUser('user-1')).resolves.toEqual({ jobs: [], collectedAt: null, sources: [] })
 
     expect(userEq).toHaveBeenCalledWith('user_id', 'user-1')
+    expect(sourceOrder).toHaveBeenCalledWith('collected_at', { ascending: false })
+    expect(sourceLimit).toHaveBeenCalledWith(100)
   })
 })

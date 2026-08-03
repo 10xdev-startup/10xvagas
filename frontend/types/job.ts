@@ -28,6 +28,8 @@ export type SourceStatus = {
   mode: 'automatic' | 'assisted'
   status: 'ok' | 'error' | 'assisted' | 'unsupported'
   count: number
+  lastRunAt: string | null
+  error: string | null
 }
 
 export type JobListResponse = {

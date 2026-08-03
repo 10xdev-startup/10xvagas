@@ -4,6 +4,7 @@ import json
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
+from uuid import uuid4
 
 from engine.supabase_rest import SupabaseRestClient
 from engine.sources.adapters import AshbyAdapter, GreenhouseAdapter, LeverAdapter, RemotiveAdapter
@@ -154,10 +155,44 @@ def upsert_jobs(
     return result if isinstance(result, list) else []
 
 
+def record_source_runs(
+    sources: list[dict[str, Any]],
+    collected_at: str,
+    client: SupabaseRestClient | None = None,
+    run_id: str | None = None,
+) -> int:
+    if not sources:
+        return 0
+    rest = client or SupabaseRestClient.from_env()
+    cycle_id = run_id or str(uuid4())
+    payload = [
+        {
+            "run_id": cycle_id,
+            "source_id": source["id"],
+            "source_label": source["label"],
+            "mode": source["mode"],
+            "status": source["status"],
+            "job_count": source["count"],
+            "error_message": str(source["error"])[:1000] if source.get("error") else None,
+            "collected_at": collected_at,
+        }
+        for source in sources
+    ]
+    rest.request(
+        "source_run",
+        method="POST",
+        payload=payload,
+        prefer="return=minimal",
+    )
+    return len(payload)
+
+
 def main() -> None:
     document = collect()
     persisted = upsert_jobs(document["jobs"], document["collected_at"])
+    recorded_sources = record_source_runs(document["sources"], document["collected_at"])
     print(f"Supabase atualizado: {len(persisted)} vagas")
+    print(f"Execucoes de fonte registradas: {recorded_sources}")
     for source in document["sources"]:
         print(f"- {source['label']}: {source['status']} ({source['count']})")
 
