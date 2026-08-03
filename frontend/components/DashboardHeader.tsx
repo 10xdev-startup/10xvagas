@@ -10,6 +10,7 @@ const ROUTES: Record<string, { eyebrow: string; title: string }> = {
   '/saved': { eyebrow: 'Decisão', title: 'Vagas salvas' },
   '/profile': { eyebrow: 'Inteligência', title: 'Perfil Canônico' },
   '/sources': { eyebrow: 'Operação', title: 'Fontes' },
+  '/billing': { eyebrow: 'Consumo', title: 'Créditos' },
 }
 
 export function DashboardHeader() {
