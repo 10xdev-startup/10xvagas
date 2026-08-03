@@ -6,7 +6,7 @@ import { toast } from 'sonner'
 import { TenXVagasLogo } from '@/components/TenXVagasLogo'
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarRail, useSidebar } from '@/components/ui/sidebar'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
-import { Bookmark, Check, ChevronUp, DatabaseZap, LogOut, Maximize2, Minimize2, MousePointerClick, PanelLeft, ScanSearch, UserRound } from 'lucide-react'
+import { Bookmark, Check, ChevronUp, DatabaseZap, LogOut, Maximize2, Minimize2, MousePointerClick, PanelLeft, ScanSearch, UserRound, WalletCards } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { useSavedJobs } from '@/lib/savedJobsStore'
 
@@ -17,6 +17,7 @@ const NAV_ITEMS = [
   { href: '/saved', title: 'Vagas salvas', icon: Bookmark },
   { href: '/profile', title: 'Perfil Canônico', icon: UserRound },
   { href: '/sources', title: 'Fontes', icon: DatabaseZap },
+  { href: '/billing', title: 'Créditos', icon: WalletCards },
 ]
 
 const SIDEBAR_MODE_KEY = 'sidebar-mode'

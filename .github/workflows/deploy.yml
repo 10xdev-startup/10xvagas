@@ -7,6 +7,8 @@
 #      - AZURE_CLIENT_ID / AZURE_TENANT_ID / AZURE_SUBSCRIPTION_ID  (service principal)
 #      - NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY    (baked no build do front)
 #      - SUPABASE_SERVICE_ROLE_KEY                                   (runtime, nunca baked no front)
+#      - STRIPE_SECRET_KEY / STRIPE_WEBHOOK_SECRET                    (runtime do billing)
+#      - FRONTEND_URL                                                  (opcional; dominio canonico do front)
 #   3. Opcional: CORS_ORIGINS (lista separada por virgula). Sem ele, o backend
 #      libera so a URL do Web App do front. Defina quando plugar dominio proprio
 #      — precisa listar apex E www, sao origens distintas pro browser.
@@ -112,6 +114,10 @@ jobs:
             --settings \
               SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }} \
               SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }} \
+              STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY }} \
+              STRIPE_WEBHOOK_SECRET=${{ secrets.STRIPE_WEBHOOK_SECRET }} \
+              STRIPE_CREDITS_PACK_LOOKUP_KEYS=10xvagas_credits_brl_10,10xvagas_credits_brl_25,10xvagas_credits_brl_50,10xvagas_credits_brl_100 \
+              FRONTEND_URL=${{ secrets.FRONTEND_URL || format('https://{0}.azurewebsites.net', env.FRONTEND_APP) }} \
               CORS_ORIGINS=${{ secrets.CORS_ORIGINS || format('https://{0}.azurewebsites.net', env.FRONTEND_APP) }} \
               WEBSITES_PORT=3001
           az webapp config appsettings set \

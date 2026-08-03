@@ -5,6 +5,8 @@ import { sendError, sendOk } from '@/utils/apiResponse'
 import { userRoutes } from '@/routes/userRoutes'
 import { savedJobRoutes } from '@/routes/savedJobRoutes'
 import { jobRoutes } from '@/routes/jobRoutes'
+import { billingRoutes } from '@/routes/billingRoutes'
+import { billingWebhookRoutes } from '@/routes/billingWebhookRoutes'
 import { errorHandler } from '@/middleware'
 import { supabase } from '@/database/supabase'
 
@@ -26,6 +28,9 @@ app.use(cors({
     else callback(null, false)
   },
 }))
+
+// A assinatura Stripe exige os bytes originais. Monte antes do parser JSON global.
+app.use('/billing/webhook', billingWebhookRoutes)
 app.use(express.json({ limit: '100kb' }))
 
 app.get('/health', (_req, res) => {
@@ -52,6 +57,7 @@ app.get('/ready', async (_req, res) => {
 app.use('/users', userRoutes)
 app.use('/saved-jobs', savedJobRoutes)
 app.use('/jobs', jobRoutes)
+app.use('/billing', billingRoutes)
 
 // Handler de erro central — por ULTIMO, depois das rotas (serializa AppError no envelope).
 app.use(errorHandler)
