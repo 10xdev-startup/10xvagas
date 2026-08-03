@@ -12,7 +12,11 @@ function formatSnapshotDate(value: string): string {
 
 export default async function DashboardPage() {
   const data = await getExperimentDashboardData()
-  const profileCompletion = Math.round((1 - data.pendingFactsCount / (data.pendingFactsCount + 30)) * 100)
+  // Sem perfil nao existe match calculado — o card mostra o convite, nao um
+  // percentual derivado de dado que nao e do usuario.
+  const profileCompletion = data.hasProfile
+    ? `${Math.round((1 - data.pendingFactsCount / (data.pendingFactsCount + 30)) * 100)}%`
+    : '—'
 
   return (
     <main className="mx-auto w-full max-w-[1680px] pb-12">
@@ -37,7 +41,7 @@ export default async function DashboardPage() {
         {[
           { label: 'No radar', value: data.jobsCount, detail: `${data.brazilCount} Brasil · ${data.internationalCount} exterior`, icon: BriefcaseBusiness },
           { label: 'Matches fortes', value: data.strongMatchesCount, detail: 'score inicial acima de 80', icon: Sparkles },
-          { label: 'Perfil', value: `${profileCompletion}%`, detail: `${data.pendingFactsCount} decisões pendentes`, icon: UserRoundCheck },
+          { label: 'Perfil', value: profileCompletion, detail: data.hasProfile ? `${data.pendingFactsCount} decisões pendentes` : 'importe o seu para ver o match', icon: UserRoundCheck },
           { label: 'Controle', value: 'Review', detail: 'você confirma o envio', icon: CircleDot },
         ].map(({ label, value, detail, icon: Icon }, index) => (
           <div className="flex items-start justify-between border-border/70 px-1 py-5 sm:px-5 sm:[&:nth-child(even)]:border-l lg:border-l lg:first:border-l-0" key={label}>

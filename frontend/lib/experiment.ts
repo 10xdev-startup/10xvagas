@@ -3,6 +3,7 @@ import 'server-only'
 import { readFile } from 'node:fs/promises'
 import path from 'node:path'
 import type { RadarJob, SourceStatus } from '@/types/job'
+import { getCanonicalProfile } from '@/lib/profile'
 
 export type { RadarJob, SourceStatus } from '@/types/job'
 
@@ -33,6 +34,7 @@ export type ExperimentJob = {
 
 export type ExperimentDashboardData = {
   collectedAt: string
+  hasProfile: boolean
   jobsCount: number
   brazilCount: number
   internationalCount: number
@@ -42,11 +44,6 @@ export type ExperimentDashboardData = {
   radarJobs: RadarJob[]
   sources: SourceStatus[]
   pendingQuestions: string[]
-}
-
-type ProfileDocument = {
-  skills_desired: Array<{ name: string; priority: number }>
-  facts_pending_confirmation: Array<{ question_pt: string }>
 }
 
 type JobsDocument = {
@@ -101,7 +98,9 @@ function canonicalUrl(value: string): string {
 
 export async function getExperimentDashboardData(): Promise<ExperimentDashboardData> {
   const [profile, jobsDocument, rankingDocument, liveDocument] = await Promise.all([
-    readJson<ProfileDocument>('engine/experiment/data/canonical-profile.json'),
+    // Perfil vem do banco, por usuario. Conta sem perfil recebe `null` e a UI
+    // mostra onboarding — nunca o perfil de outra pessoa.
+    getCanonicalProfile(),
     readJson<JobsDocument>('engine/experiment/data/jobs.json'),
     readJson<RankingDocument>('engine/experiment/output/system-ranking.json'),
     readLiveJobs(),
@@ -170,14 +169,15 @@ export async function getExperimentDashboardData(): Promise<ExperimentDashboardD
     brazilCount: radarJobs.filter((job) => job.market === 'brazil').length,
     internationalCount: radarJobs.filter((job) => job.market === 'international').length,
     strongMatchesCount: matchedJobs.filter((job) => (job.score ?? 0) >= 80).length,
-    pendingFactsCount: profile.facts_pending_confirmation.length,
-    desiredSkills: profile.skills_desired
+    hasProfile: profile !== null,
+    pendingFactsCount: profile?.facts_pending_confirmation.length ?? 0,
+    desiredSkills: (profile?.skills_desired ?? [])
       .toSorted((first, second) => second.priority - first.priority)
       .slice(0, 10)
       .map((skill) => skill.name),
     radarJobs,
     sources: liveDocument.sources,
-    pendingQuestions: profile.facts_pending_confirmation
+    pendingQuestions: (profile?.facts_pending_confirmation ?? [])
       .slice(0, 4)
       .map((fact) => fact.question_pt),
   }
