@@ -23,6 +23,7 @@ const authUser: AuthUser = {
 }
 
 const snapshot: SavedJobSnapshot = {
+  publicId: 'full-stack-developer-abc123',
   market: 'brazil',
   company: '10xDev',
   title: 'Full-stack Developer',

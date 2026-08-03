@@ -11,7 +11,7 @@ jest.mock('../services/apiClient', () => ({
 }))
 
 const job: RadarJob = {
-  id: 'experiment-1', market: 'brazil', company: '10xDev', title: 'Full Stack', source: 'Lever', sourceLabel: 'Lever',
+  id: 'experiment-1', publicId: 'full-stack-abc123', market: 'brazil', company: '10xDev', title: 'Full Stack', source: 'Lever', sourceLabel: 'Lever',
   sourceUrl: 'https://jobs.example.com/ABC/', applyUrl: null, description: 'TypeScript', location: 'Belo Horizonte, MG',
   workplaceType: 'hybrid', employmentType: 'clt', salary: null, publishedAt: null, score: 90, rank: 1,
   reasons: ['stack'], gaps: [], skills: ['TypeScript'], status: 'matched',

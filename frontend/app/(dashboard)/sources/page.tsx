@@ -1,7 +1,5 @@
-import { SourcesLedger } from '@/components/SourcesLedger'
-import { getExperimentDashboardData } from '@/lib/experiment'
+import { SourcesWorkspace } from '@/components/SourcesWorkspace'
 
-export default async function SourcesPage() {
-  const data = await getExperimentDashboardData()
-  return <SourcesLedger sources={data.sources} />
+export default function SourcesPage() {
+  return <SourcesWorkspace />
 }

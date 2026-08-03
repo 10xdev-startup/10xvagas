@@ -76,6 +76,7 @@ function parseSnapshot(value: unknown): SavedJobSnapshot {
   }
 
   return {
+    publicId: requiredString(input['publicId'], 'snapshot.publicId'),
     market: marketValue(input['market']),
     company: requiredString(input['company'], 'snapshot.company'),
     title: requiredString(input['title'], 'snapshot.title'),

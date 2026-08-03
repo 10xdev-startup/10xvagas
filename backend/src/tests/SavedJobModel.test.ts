@@ -6,6 +6,7 @@ import type { SavedJobRow, SavedJobSnapshot } from '@/types/savedJob'
 jest.mock('@/database/supabase', () => ({ supabase: { from: jest.fn() } }))
 
 const snapshot: SavedJobSnapshot = {
+  publicId: 'full-stack-developer-abc123',
   market: 'brazil',
   company: '10xDev',
   title: 'Full-stack Developer',

@@ -5,13 +5,13 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from engine.supabase_rest import SupabaseRestClient
 from engine.sources.adapters import AshbyAdapter, GreenhouseAdapter, LeverAdapter, RemotiveAdapter
 from engine.sources.models import SourceAdapter, SourceConfig, SourceJob
 
 
 BASE_DIR = Path(__file__).resolve().parent
 REGISTRY_PATH = BASE_DIR / "registry.json"
-OUTPUT_PATH = BASE_DIR / "output" / "live-jobs.json"
 
 ADAPTERS: dict[str, SourceAdapter] = {
     adapter.source_type: adapter
@@ -136,14 +136,28 @@ def collect() -> dict[str, Any]:
     }
 
 
+def upsert_jobs(
+    jobs: list[dict[str, Any]],
+    collected_at: str,
+    client: SupabaseRestClient | None = None,
+) -> list[dict[str, Any]]:
+    if not jobs:
+        return []
+    rest = client or SupabaseRestClient.from_env()
+    payload = [{**job, "last_seen_at": collected_at} for job in jobs]
+    result = rest.request(
+        "job?on_conflict=source%2Cexternal_id",
+        method="POST",
+        payload=payload,
+        prefer="resolution=merge-duplicates,return=representation,missing=default",
+    )
+    return result if isinstance(result, list) else []
+
+
 def main() -> None:
     document = collect()
-    OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    OUTPUT_PATH.write_text(
-        json.dumps(document, ensure_ascii=False, indent=2) + "\n",
-        encoding="utf-8",
-    )
-    print(f"Snapshot ao vivo: {OUTPUT_PATH}")
+    persisted = upsert_jobs(document["jobs"], document["collected_at"])
+    print(f"Supabase atualizado: {len(persisted)} vagas")
     for source in document["sources"]:
         print(f"- {source['label']}: {source['status']} ({source['count']})")
 

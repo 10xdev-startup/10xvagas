@@ -4,6 +4,7 @@ export type JobRadarStatus = 'matched' | 'new'
 
 /** Snapshot normalizado da vaga no instante em que o usuario a salvou. */
 export interface SavedJobSnapshot {
+  publicId: string
   market: JobMarket
   company: string
   title: string

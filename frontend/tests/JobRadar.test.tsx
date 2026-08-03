@@ -1,7 +1,7 @@
 import { describe, expect, it } from '@jest/globals'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { JobRadar } from '@/components/JobRadar'
-import type { RadarJob, SourceStatus } from '@/lib/experiment'
+import type { RadarJob, SourceStatus } from '@/types/job'
 
 declare const jest: typeof import('@jest/globals').jest
 
@@ -13,6 +13,7 @@ jest.mock('../lib/savedJobsStore', () => ({
 const jobs: RadarJob[] = [
   {
     id: 'br-1',
+    publicId: 'desenvolvedor-full-stack-abc123',
     market: 'brazil',
     company: 'Empresa Brasil',
     title: 'Desenvolvedor Full Stack',
@@ -35,6 +36,7 @@ const jobs: RadarJob[] = [
   },
   {
     id: 'int-1',
+    publicId: 'software-engineer-def456',
     market: 'international',
     company: 'Remote Company',
     title: 'Software Engineer',

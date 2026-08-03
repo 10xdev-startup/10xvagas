@@ -87,7 +87,7 @@ npm run lint             # ESLint dos dois lados
 npm run test:backend     # testes Jest do backend
 npm run test:frontend    # testes Jest do frontend
 npm run test:engine      # testes Python de matching e fontes
-npm run collect:jobs     # atualiza engine/sources/output/live-jobs.json
+npm run collect:jobs     # faz upsert das vagas no Supabase
 npm run profile:import -- --input curriculo.pdf --use-codex
 ```
 

@@ -1,5 +1,6 @@
 export type RadarJob = {
   id: string
+  publicId: string
   market: 'brazil' | 'international'
   company: string
   title: string
@@ -27,4 +28,10 @@ export type SourceStatus = {
   mode: 'automatic' | 'assisted'
   status: 'ok' | 'error' | 'assisted' | 'unsupported'
   count: number
+}
+
+export type JobListResponse = {
+  collectedAt: string | null
+  jobs: RadarJob[]
+  sources: SourceStatus[]
 }
