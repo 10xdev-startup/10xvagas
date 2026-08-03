@@ -2,7 +2,7 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import { getSafeAuthRedirect } from '@/lib/authRedirect'
 
-const PUBLIC_PATHS = ['/login', '/auth/callback']
+const PUBLIC_PATHS = ['/', '/login', '/auth/callback']
 
 function isPublicPath(pathname: string): boolean {
   return PUBLIC_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`))
@@ -36,11 +36,11 @@ function redirectWithSession(request: NextRequest, sessionResponse: NextResponse
   return response
 }
 
-function loginRedirect(request: NextRequest, sessionResponse = NextResponse.next()): NextResponse {
-  const loginUrl = new URL('/login', request.url)
+function landingRedirect(request: NextRequest, sessionResponse = NextResponse.next()): NextResponse {
+  const landingUrl = new URL('/', request.url)
   const destination = `${request.nextUrl.pathname}${request.nextUrl.search}`
-  loginUrl.searchParams.set('redirect', getSafeAuthRedirect(destination))
-  return redirectWithSession(request, sessionResponse, loginUrl.pathname + loginUrl.search)
+  landingUrl.searchParams.set('redirect', getSafeAuthRedirect(destination))
+  return redirectWithSession(request, sessionResponse, landingUrl.pathname + landingUrl.search)
 }
 
 export async function proxy(request: NextRequest): Promise<NextResponse> {
@@ -49,12 +49,12 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   const authCookiePresent = hasAuthCookie(request)
 
   if (!authCookiePresent) {
-    return publicPath ? NextResponse.next() : loginRedirect(request)
+    return publicPath ? NextResponse.next() : landingRedirect(request)
   }
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  if (!url || !key) return publicPath ? NextResponse.next() : loginRedirect(request)
+  if (!url || !key) return publicPath ? NextResponse.next() : landingRedirect(request)
 
   let sessionResponse = NextResponse.next({ request })
   const supabase = createServerClient(url, key, {
@@ -72,7 +72,12 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   const { data, error } = await supabase.auth.getClaims()
   const isAuthenticated = !error && typeof data?.claims?.sub === 'string'
 
-  if (!isAuthenticated && !publicPath) return loginRedirect(request, sessionResponse)
+  if (!isAuthenticated && !publicPath) return landingRedirect(request, sessionResponse)
+
+  if (isAuthenticated && pathname === '/') {
+    const destination = getSafeAuthRedirect(request.nextUrl.searchParams.get('redirect'))
+    return redirectWithSession(request, sessionResponse, destination)
+  }
 
   if (isAuthenticated && pathname === '/login') {
     const destination = getSafeAuthRedirect(request.nextUrl.searchParams.get('redirect'))

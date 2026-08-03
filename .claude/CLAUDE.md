@@ -309,7 +309,8 @@ Use dollar-quoting (`$$...$$`) nas strings dentro do SQL pra nao escapar aspas n
 
 ## Arquivos-chave
 
-- `frontend/app/(dashboard)/page.tsx` — pagina principal
+- `frontend/app/page.tsx` — landing page publica
+- `frontend/app/(dashboard)/dashboard/page.tsx` — radar autenticado em `/dashboard`
 - `frontend/components/AppSidebar.tsx` — sidebar com navegacao
 - `backend/src/index.ts` — entry point do servidor
 - `backend/src/database/supabase.ts` — configuracao do client (service-role)

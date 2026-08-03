@@ -6,7 +6,7 @@ import { ThemeToggle } from '@/components/showcase/blocks/ThemeToggle'
 import { SidebarTrigger } from '@/components/ui/sidebar'
 
 const ROUTES: Record<string, { eyebrow: string; title: string }> = {
-  '/': { eyebrow: 'Descoberta', title: 'Radar' },
+  '/dashboard': { eyebrow: 'Descoberta', title: 'Radar' },
   '/saved': { eyebrow: 'Decisão', title: 'Vagas salvas' },
   '/profile': { eyebrow: 'Inteligência', title: 'Perfil Canônico' },
   '/sources': { eyebrow: 'Operação', title: 'Fontes' },

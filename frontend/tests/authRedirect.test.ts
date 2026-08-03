@@ -12,10 +12,14 @@ describe('getSafeAuthRedirect', () => {
     '/auth/callback?code=vazado',
     'javascript:alert(1)',
   ])('rejeita destino inseguro: %s', (destination) => {
-    expect(getSafeAuthRedirect(destination)).toBe('/')
+    expect(getSafeAuthRedirect(destination)).toBe('/dashboard')
   })
 
   it('remove parametros OAuth que nao devem voltar ao dashboard', () => {
-    expect(getSafeAuthRedirect('/?market=br&code=segredo&state=estado')).toBe('/?market=br')
+    expect(getSafeAuthRedirect('/dashboard?market=br&code=segredo&state=estado')).toBe('/dashboard?market=br')
+  })
+
+  it('usa o dashboard como destino padrao', () => {
+    expect(getSafeAuthRedirect(null)).toBe('/dashboard')
   })
 })

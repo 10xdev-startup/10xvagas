@@ -13,7 +13,7 @@ import { useSavedJobs } from '@/lib/savedJobsStore'
 type SidebarMode = 'expanded' | 'collapsed' | 'hover'
 
 const NAV_ITEMS = [
-  { href: '/', title: 'Radar', icon: ScanSearch },
+  { href: '/dashboard', title: 'Radar', icon: ScanSearch },
   { href: '/saved', title: 'Vagas salvas', icon: Bookmark },
   { href: '/profile', title: 'Perfil Canônico', icon: UserRound },
   { href: '/sources', title: 'Fontes', icon: DatabaseZap },
