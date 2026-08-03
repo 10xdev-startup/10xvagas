@@ -63,7 +63,7 @@ Antes do primeiro login, copie as variaveis de `frontend/.env.example` e `backen
 2. adicione `http://localhost:3000/auth/callback` nas URLs de redirecionamento;
 3. crie `public.users` conforme o DDL documentado em [`.claude/CLAUDE.md`](.claude/CLAUDE.md).
 
-Defina `ALLOWED_USER_EMAILS` nos dois servicos com uma lista separada por virgula. O MVP e single-user e falha fechado em producao quando essa variavel nao existe. No backend, configure tambem `CORS_ORIGINS` com as origens permitidas.
+O cadastro e aberto: qualquer conta autenticada pelo Supabase Auth entra e recebe o proprio espaco, isolado por `user_id` e RLS. No backend, configure `CORS_ORIGINS` com as origens permitidas.
 
 O Supabase do 10xVagas deve ser um projeto separado. O schema de `users` reaproveita
 FK, RLS, policies e trigger de criacao da 10xDev, mas nao copia dados nem colunas
@@ -126,7 +126,7 @@ Protocolo completo: [`engine/experiment/README.md`](engine/experiment/README.md)
 - Componentes PascalCase, utilitarios camelCase, banco snake_case, API kebab-case.
 - DDL via Supabase Management API; sem migrations SQL no repositorio.
 - Sessao web via `@supabase/ssr`; autorizacao da API sempre pelo Bearer JWT validado no backend.
-- Acesso do MVP limitado por `ALLOWED_USER_EMAILS` no Proxy e no middleware Node.
+- Cadastro aberto; isolamento por usuario garantido por `user_id` e RLS, nao por allowlist.
 - Conversa, commits e PRs em portugues; codigo-fonte em ingles.
 - Dark mode por tokens sem cores hardcoded nos componentes de produto.
 

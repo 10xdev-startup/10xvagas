@@ -159,7 +159,7 @@ Convencoes:
 ## Autenticacao
 
 - **Provider**: Supabase Auth (Google OAuth)
-- **Acesso MVP**: `ALLOWED_USER_EMAILS` limita o workspace no Proxy e no backend. Em producao, variavel ausente bloqueia todas as contas.
+- **Acesso**: cadastro aberto — qualquer conta autenticada entra. O isolamento entre usuarios vem de `user_id` + RLS em toda tabela, nunca de allowlist.
 - **Tokens**: JWT Bearer tokens em headers `Authorization: Bearer <token>`
 - **Backend**: `supabaseMiddleware` (`@/middleware`) valida o JWT via `auth.getUser(token)`, garante a linha em `users` (cria no 1º login) e injeta `req.user` (`AuthUser`, tipado em todo controller).
 - **Roles**: `req.user.role` (`UserRole = 'user' | 'admin'`). Proteja rotas com `requireRole(...roles)` / `requireAdmin` (`@/middleware`); para mais papeis, edite a union `UserRole`. Roles por recurso (membership) sao um dominio a construir por cima — nao vem no template.

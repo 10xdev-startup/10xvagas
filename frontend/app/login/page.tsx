@@ -43,8 +43,6 @@ function LoginContent(): React.JSX.Element {
   useEffect(() => {
     if (searchParams.get('error') === 'oauth_callback') {
       toast.error('Não foi possível concluir o login. Tente novamente.')
-    } else if (searchParams.get('error') === 'not_allowed') {
-      toast.error('Esta conta não tem acesso a este workspace.')
     }
   }, [searchParams])
 

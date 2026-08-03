@@ -1,7 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import { getSafeAuthRedirect } from '@/lib/authRedirect'
-import { isAllowedUserEmail } from '@/lib/access'
 
 const PUBLIC_PATHS = ['/login', '/auth/callback']
 
@@ -74,13 +73,6 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   const isAuthenticated = !error && typeof data?.claims?.sub === 'string'
 
   if (!isAuthenticated && !publicPath) return loginRedirect(request, sessionResponse)
-
-  if (isAuthenticated && !isAllowedUserEmail(data.claims.email)) {
-    await supabase.auth.signOut()
-    const loginUrl = new URL('/login', request.url)
-    loginUrl.searchParams.set('error', 'not_allowed')
-    return redirectWithSession(request, sessionResponse, loginUrl.pathname + loginUrl.search)
-  }
 
   if (isAuthenticated && pathname === '/login') {
     const destination = getSafeAuthRedirect(request.nextUrl.searchParams.get('redirect'))
