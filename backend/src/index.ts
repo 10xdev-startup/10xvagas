@@ -34,13 +34,14 @@ app.get('/health', (_req, res) => {
 })
 
 app.get('/ready', async (_req, res) => {
-  const [users, savedJobs, jobs, jobMatches] = await Promise.all([
+  const [users, savedJobs, jobs, jobMatches, sourceRuns] = await Promise.all([
     supabase.from('users').select('id', { count: 'exact', head: true }),
     supabase.from('saved_job').select('id', { count: 'exact', head: true }),
     supabase.from('job').select('id', { count: 'exact', head: true }),
     supabase.from('job_match').select('job_id', { count: 'exact', head: true }),
+    supabase.from('source_run').select('id', { count: 'exact', head: true }),
   ])
-  if (users.error || savedJobs.error || jobs.error || jobMatches.error) {
+  if (users.error || savedJobs.error || jobs.error || jobMatches.error || sourceRuns.error) {
     sendError(res, 503, 'Banco ainda nao esta pronto para trafego autenticado.', 'DATABASE_NOT_READY')
     return
   }

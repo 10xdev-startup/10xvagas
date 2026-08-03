@@ -5,8 +5,8 @@ import { AppError } from '@/utils/AppError'
 import { sendOk } from '@/utils/apiResponse'
 
 const ASSISTED_SOURCES: SourceStatus[] = [
-  { id: 'linkedin', label: 'LinkedIn', mode: 'assisted', status: 'assisted', count: 0 },
-  { id: 'indeed', label: 'Indeed', mode: 'assisted', status: 'assisted', count: 0 },
+  { id: 'linkedin', label: 'LinkedIn', mode: 'assisted', status: 'assisted', count: 0, lastRunAt: null, error: null },
+  { id: 'indeed', label: 'Indeed', mode: 'assisted', status: 'assisted', count: 0, lastRunAt: null, error: null },
 ]
 
 function requireAuthUserId(req: Request): string {
@@ -24,6 +24,8 @@ function sourceStatuses(jobs: RadarJob[]): SourceStatus[] {
       mode: 'automatic',
       status: 'ok',
       count: (current?.count ?? 0) + 1,
+      lastRunAt: null,
+      error: null,
     })
   }
   return [...sources.values(), ...ASSISTED_SOURCES]
@@ -32,8 +34,8 @@ function sourceStatuses(jobs: RadarJob[]): SourceStatus[] {
 export const JobController = {
   /** GET /jobs */
   async list(req: Request, res: Response): Promise<void> {
-    const { jobs, collectedAt } = await JobModel.listByUser(requireAuthUserId(req))
-    sendOk(res, { collectedAt, jobs, sources: sourceStatuses(jobs) })
+    const { jobs, collectedAt, sources } = await JobModel.listByUser(requireAuthUserId(req))
+    sendOk(res, { collectedAt, jobs, sources: sources.length > 0 ? sources : sourceStatuses(jobs) })
   },
 
   /** GET /jobs/:id — `id` ja e UUID depois de `router.param`. */

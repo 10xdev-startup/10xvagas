@@ -60,8 +60,8 @@ const jobs: RadarJob[] = [
 ]
 
 const sources: SourceStatus[] = [
-  { id: 'lever', label: 'Lever', mode: 'automatic', status: 'ok', count: 1 },
-  { id: 'linkedin', label: 'LinkedIn', mode: 'assisted', status: 'assisted', count: 0 },
+  { id: 'lever', label: 'Lever', mode: 'automatic', status: 'ok', count: 1, lastRunAt: '2026-08-03T12:00:00Z', error: null },
+  { id: 'linkedin', label: 'LinkedIn', mode: 'assisted', status: 'assisted', count: 0, lastRunAt: '2026-08-03T12:00:00Z', error: null },
 ]
 
 describe('JobRadar', () => {

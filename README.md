@@ -88,7 +88,10 @@ npm run test:backend     # testes Jest do backend
 npm run test:frontend    # testes Jest do frontend
 npm run test:engine      # testes Python de matching e fontes
 npm run collect:jobs     # faz upsert das vagas no Supabase
+npm run engine:cycle     # coleta, registra fontes e recalcula matches
+npm run match:jobs       # recalcula somente os matches persistidos
 npm run profile:import -- --input curriculo.pdf --use-codex
+npm run profile:sync     # associa o perfil revisado ao PROFILE_USER_ID
 ```
 
 As suites Jest devem ser executadas com arquivo/filtro durante desenvolvimento para nao sobrecarregar o WSL. Consulte [`.claude/CLAUDE.md`](.claude/CLAUDE.md).

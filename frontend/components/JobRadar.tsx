@@ -76,7 +76,7 @@ function SourceIndicator({ source }: { source: SourceStatus }) {
     const href = source.id === 'linkedin' ? 'https://www.linkedin.com/jobs/' : 'https://br.indeed.com/'
     return <a className={className} href={href} rel="noreferrer" target="_blank">{content}</a>
   }
-  return <span className={className}>{content}</span>
+  return <span className={className} title={source.error ?? `Última execução: ${source.lastRunAt ?? 'não registrada'}`}>{content}</span>
 }
 
 function JobListItem({ active, job, onSelect, onToggleSaved, saved }: { active: boolean; job: RadarJob; onSelect: () => void; onToggleSaved: () => void; saved: boolean }) {

@@ -59,7 +59,11 @@ describe('JobController', () => {
   })
 
   it('lista no envelope e usa somente o usuario autenticado', async () => {
-    listByUserMock.mockResolvedValue({ jobs: [job], collectedAt: '2026-08-03T13:00:00.000Z' })
+    listByUserMock.mockResolvedValue({
+      jobs: [job],
+      collectedAt: '2026-08-03T13:00:00.000Z',
+      sources: [{ id: 'lever', label: 'Lever', mode: 'automatic', status: 'ok', count: 1, lastRunAt: '2026-08-03T13:00:00.000Z', error: null }],
+    })
     const { res, json } = response()
 
     await JobController.list({ user: authUser, body: { user_id: 'attacker' } } as Request, res)
