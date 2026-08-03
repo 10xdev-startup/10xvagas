@@ -17,7 +17,7 @@ export function normalizeSlugText(value: string): string {
     .normalize('NFD')
     // Faixa de combining marks escrita com escape — combining mark literal e
     // invisivel no editor e vira bug silencioso.
-    .replace(/[̀-ͯ]/g, '')
+    .replace(/[\u0300-\u036f]/g, '')
     .toLocaleLowerCase('en-US')
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/-+/g, '-')
