@@ -13,9 +13,10 @@ npm test -- tests/JobRadar.test.tsx --runInBand
 
 ## Organizacao
 
-- `app/`: rotas e layouts.
+- `app/page.tsx`: landing page publica.
+- `app/(dashboard)/dashboard`: radar autenticado; as demais rotas do grupo compartilham sidebar e header.
 - `app/login` e `app/auth/callback`: entrada Google OAuth e callback PKCE.
-- `components/`: componentes de produto.
+- `components/`: componentes de produto, incluindo `MarketingLandingPage`.
 - `components/ui/`: primitives shadcn/Radix.
 - `components/showcase/blocks/`: biblioteca interna herdada do template; nao e uma rota publica.
 - `lib/supabase/`: clientes oficiais de browser e servidor; `proxy.ts` renova cookies e protege o dashboard.

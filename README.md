@@ -7,6 +7,7 @@ O produto segue o posicionamento de **copiloto de candidatura, nao bot de spam**
 ## Estado atual
 
 - Radar web com vagas nacionais e internacionais.
+- Landing page publica na raiz e workspace autenticado em `/dashboard`.
 - Rotas independentes para Radar, Vagas salvas, Perfil Canonico e Fontes.
 - Shortlist local-first por usuario, sincronizada pela API Node com o Supabase.
 - Alcance da busca configuravel entre Brasil remoto, BH/RMBH hibrido e exterior remoto.

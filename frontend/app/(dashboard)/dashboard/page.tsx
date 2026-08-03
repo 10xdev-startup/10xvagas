@@ -10,7 +10,7 @@ function formatSnapshotDate(value: string): string {
   return new Intl.DateTimeFormat('pt-BR', { dateStyle: 'medium' }).format(date)
 }
 
-export default async function HomePage() {
+export default async function DashboardPage() {
   const data = await getExperimentDashboardData()
   const profileCompletion = Math.round((1 - data.pendingFactsCount / (data.pendingFactsCount + 30)) * 100)
 
