@@ -152,6 +152,11 @@ export const StripeService = {
     }
   },
 
+  async retrieveCustomerForUser(customerId: string, userId: string): Promise<Stripe.Customer | null> {
+    const customer = await StripeService.retrieveCustomer(customerId)
+    return customer?.metadata['app_user_id'] === userId ? customer : null
+  },
+
   async createCustomer(userId: string, email: string): Promise<Stripe.Customer> {
     return getStripe().customers.create(
       {
@@ -236,9 +241,9 @@ export const StripeService = {
     customerId: string
     paymentIntentId: string
     userId: string | null
-  }): Promise<void> {
-    if (params.amountCents <= 0) return
-    await getStripe().customers.createBalanceTransaction(
+  }): Promise<string> {
+    if (params.amountCents <= 0) throw new Error('INVALID_CHECKOUT_CREDIT_AMOUNT')
+    const transaction = await getStripe().customers.createBalanceTransaction(
       params.customerId,
       {
         amount: -params.amountCents,
@@ -253,6 +258,7 @@ export const StripeService = {
       },
       { idempotencyKey: `${BILLING_NAMESPACE}_checkout_${params.paymentIntentId}` },
     )
+    return transaction.id
   },
 
   async emitMeterEvent(input: MeterEventInput): Promise<string> {

@@ -11,6 +11,7 @@ export interface BillingStatus {
   checkoutEnabled: boolean
   currency: string
   hasCustomer: boolean
+  minimumAnalysisCreditsCents: number
   packs: BillingPack[]
 }
 
