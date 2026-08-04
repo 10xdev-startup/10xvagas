@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import time
 import unittest
 from pathlib import Path
 from unittest.mock import Mock
@@ -121,6 +122,28 @@ class ProfileAnalysisWorkerTests(unittest.TestCase):
         usage_patch = next(patch for path, patch in client.patches if path.startswith("ai_usage_event?"))
         self.assertEqual(usage_patch["total_tokens"], 130)
         self.assertEqual(usage_patch["cached_tokens"], 40)
+
+    def test_renews_lease_while_llm_call_is_blocking(self) -> None:
+        client = FakeClient()
+        gateway = Mock()
+        gateway.call_structured.side_effect = lambda **_kwargs: time.sleep(0.04)
+        worker = ProfileAnalysisWorker(
+            client,
+            gateway,
+            heartbeat_interval_seconds=0.01,
+            lease_seconds=1,
+            worker_id="test-worker",
+        )
+
+        worker._call_gateway_with_heartbeat(
+            "job-1",
+            idempotency_key="usage-1",
+            model=Mock(),
+            prompt="context",
+        )
+
+        heartbeats = [patch for path, patch in client.patches if path.startswith("profile_analysis_job?")]
+        self.assertGreaterEqual(len(heartbeats), 2)
 
 
 if __name__ == "__main__":

@@ -10,7 +10,7 @@ import tempfile
 import time
 import uuid
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 from engine.llm.catalog import get_selectable_model
@@ -25,25 +25,29 @@ LEASE_SECONDS = 300
 POLL_SECONDS = 2.0
 
 
-class _HealthHandler(BaseHTTPRequestHandler):
-    def do_GET(self) -> None:  # noqa: N802 - nome definido pela stdlib
-        if self.path not in {"/health", "/ready"}:
-            self.send_response(404)
+def _health_handler(readiness_check: Callable[[], bool]) -> type[BaseHTTPRequestHandler]:
+    class HealthHandler(BaseHTTPRequestHandler):
+        def do_GET(self) -> None:  # noqa: N802 - nome definido pela stdlib
+            if self.path not in {"/health", "/ready"}:
+                self.send_response(404)
+                self.end_headers()
+                return
+            ready = self.path == "/health" or readiness_check()
+            body = b'{"status":"ok"}' if ready else b'{"status":"not_ready"}'
+            self.send_response(200 if ready else 503)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(body)))
             self.end_headers()
+            self.wfile.write(body)
+
+        def log_message(self, _format: str, *_args: object) -> None:
             return
-        body = b'{"status":"ok"}'
-        self.send_response(200)
-        self.send_header("Content-Type", "application/json")
-        self.send_header("Content-Length", str(len(body)))
-        self.end_headers()
-        self.wfile.write(body)
 
-    def log_message(self, _format: str, *_args: object) -> None:
-        return
+    return HealthHandler
 
 
-def start_health_server(port: int) -> ThreadingHTTPServer:
-    server = ThreadingHTTPServer(("0.0.0.0", port), _HealthHandler)
+def start_health_server(port: int, readiness_check: Callable[[], bool]) -> ThreadingHTTPServer:
+    server = ThreadingHTTPServer(("0.0.0.0", port), _health_handler(readiness_check))
     threading.Thread(target=server.serve_forever, name="health-server", daemon=True).start()
     return server
 
@@ -111,17 +115,21 @@ class ProfileAnalysisWorker:
         client: SupabaseRestClient,
         gateway: StripeLlmGateway,
         *,
+        heartbeat_interval_seconds: float | None = None,
+        lease_seconds: int = LEASE_SECONDS,
         worker_id: str | None = None,
     ) -> None:
         self.client = client
         self.gateway = gateway
+        self.lease_seconds = lease_seconds
+        self.heartbeat_interval_seconds = heartbeat_interval_seconds or max(5.0, min(60.0, lease_seconds / 3))
         self.worker_id = worker_id or f"{socket.gethostname()}-{os.getpid()}"
         self.schema = json.loads(ANALYSIS_SCHEMA_PATH.read_text(encoding="utf-8"))
 
     def claim(self) -> dict[str, Any] | None:
         return _single_row(self.client.rpc(
             "claim_profile_analysis_job",
-            {"p_lease_seconds": LEASE_SECONDS, "p_worker_id": self.worker_id},
+            {"p_lease_seconds": self.lease_seconds, "p_worker_id": self.worker_id},
         ))
 
     def _patch_job(self, job_id: str, patch: dict[str, Any]) -> None:
@@ -136,7 +144,7 @@ class ProfileAnalysisWorker:
         self._patch_job(job_id, {
             "current_step": current_step,
             "heartbeat_at": now,
-            "lease_expires_at": _future_iso(LEASE_SECONDS),
+            "lease_expires_at": _future_iso(self.lease_seconds),
             "progress": progress,
         })
 
@@ -209,6 +217,36 @@ class ProfileAnalysisWorker:
             f"profile_analysis?select=id&job_id=eq.{job_id}&limit=1",
         )
         return _single_row(rows)
+
+    def _call_gateway_with_heartbeat(
+        self,
+        job_id: str,
+        *,
+        idempotency_key: str,
+        model: Any,
+        prompt: str,
+    ) -> Any:
+        stopped = threading.Event()
+
+        def keep_lease() -> None:
+            while not stopped.wait(self.heartbeat_interval_seconds):
+                try:
+                    self._heartbeat(job_id, 50, "Analisando perfil e curriculo")
+                except SupabaseRestError as error:
+                    print(f"[profile-worker] heartbeat falhou job={job_id}: {error}")
+
+        heartbeat = threading.Thread(target=keep_lease, name=f"heartbeat-{job_id}", daemon=True)
+        heartbeat.start()
+        try:
+            return self.gateway.call_structured(
+                idempotency_key=idempotency_key,
+                model=model,
+                prompt=prompt,
+                schema=self.schema,
+            )
+        finally:
+            stopped.set()
+            heartbeat.join(timeout=max(1.0, self.heartbeat_interval_seconds * 2))
 
     def _finish_succeeded(self, job_id: str) -> None:
         now = _now_iso()
@@ -338,11 +376,11 @@ class ProfileAnalysisWorker:
             usage_id = self._usage_id_for_job(job)
             usage_inserted = True
             self._heartbeat(job_id, 50, "Analisando perfil e curriculo")
-            response = self.gateway.call_structured(
+            response = self._call_gateway_with_heartbeat(
+                job_id,
                 idempotency_key=f"10xvagas_profile_{usage_id}",
                 model=model,
                 prompt=prompt,
-                schema=self.schema,
             )
             self._update_usage_after_llm(usage_id, response)
             usage_captured = True
@@ -467,11 +505,19 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main() -> int:
     args = build_parser().parse_args()
+    client = SupabaseRestClient.from_env()
+    worker = ProfileAnalysisWorker(client, StripeLlmGateway.from_env())
     health_server = None
     port = os.environ.get("PORT", "").strip()
     if port and not args.once:
-        health_server = start_health_server(int(port))
-    worker = ProfileAnalysisWorker(SupabaseRestClient.from_env(), StripeLlmGateway.from_env())
+        def ready() -> bool:
+            try:
+                client.request("profile_analysis_job?select=id&limit=1")
+                return True
+            except SupabaseRestError:
+                return False
+
+        health_server = start_health_server(int(port), ready)
     if args.once:
         return 0 if worker.run_once() else 3
     while True:
