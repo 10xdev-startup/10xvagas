@@ -204,6 +204,9 @@ export const ProfileAnalysisController = {
     if (await ProfileAnalysisModel.findActiveByUser(user.id)) {
       throw new AppError(409, 'Ja existe uma analise em andamento', 'PROFILE_ANALYSIS_ACTIVE')
     }
+    if (!await ProfileDocumentService.exists(previous.document_path)) {
+      throw new AppError(410, 'O curriculo desta analise nao esta mais armazenado', 'PROFILE_DOCUMENT_EXPIRED')
+    }
     const billing = await BillingCustomerService.requireAvailableCredits(user.id, user.email)
     try {
       const job = await ProfileAnalysisModel.createJob({
@@ -232,7 +235,13 @@ export const ProfileAnalysisController = {
   async approve(req: Request, res: Response): Promise<void> {
     const user = requireUser(req)
     const id = requireIdParam(req)
-    const detail = await detailForUser(id, user.id)
+    const storedJob = await ProfileAnalysisModel.findJobByUser(id, user.id)
+    if (!storedJob) throw new AppError(404, 'Analise nao encontrada', 'PROFILE_ANALYSIS_NOT_FOUND')
+    const storedAnalysis = await ProfileAnalysisModel.findAnalysisByJob(id, user.id)
+    const detail = {
+      analysis: storedAnalysis ? mapProfileAnalysis(storedAnalysis) : null,
+      job: mapProfileAnalysisJob(storedJob),
+    }
     if (detail.job.status !== 'succeeded' || !detail.analysis) {
       throw new AppError(409, 'A analise ainda nao possui um rascunho aprovavel', 'PROFILE_ANALYSIS_NOT_APPROVABLE')
     }
@@ -243,6 +252,7 @@ export const ProfileAnalysisController = {
     const requested = (req.body as { document?: unknown } | undefined)?.document
     const document = validateProfileDraft(requested ?? detail.analysis.canonicalProfileDraft)
     await ProfileAnalysisModel.approve({ document, jobId: id, userId: user.id })
+    await ProfileDocumentService.remove(storedJob.document_path)
     sendOk(res, await detailForUser(id, user.id))
   },
 }

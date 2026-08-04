@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { AlertTriangle, Check, ChevronRight, FileSearch, FileUp, Languages, LoaderCircle, RefreshCw, Sparkles, Square, WalletCards } from 'lucide-react'
 import { toast } from 'sonner'
-import type { CanonicalProfile } from '@/lib/profile'
+import type { CanonicalProfile } from '@/types/profile'
 import { applyAnswersToProfileDraft } from '@/lib/profileDraftAnswers'
 import { cn } from '@/lib/utils'
 import { billingService, type BillingStatus } from '@/services/billingService'
@@ -55,8 +55,9 @@ function buildDiff(current: CanonicalProfile | null, proposed: Record<string, un
   ]
 }
 
-export function ProfileAnalysisPanel({ currentProfile = null, compact = false }: { currentProfile?: CanonicalProfile | null; compact?: boolean }) {
+export function ProfileAnalysisPanel({ currentProfile = null, compact = false, onProfileApproved }: { currentProfile?: CanonicalProfile | null; compact?: boolean; onProfileApproved?: () => void }) {
   const [billing, setBilling] = useState<BillingStatus | null>(null)
+  const [billingError, setBillingError] = useState(false)
   const [detail, setDetail] = useState<ProfileAnalysisDetail | null>(null)
   const [history, setHistory] = useState<ProfileAnalysisJob[]>([])
   const [file, setFile] = useState<File | null>(null)
@@ -69,39 +70,57 @@ export function ProfileAnalysisPanel({ currentProfile = null, compact = false }:
   const [answers, setAnswers] = useState<Record<string, string>>({})
   const [submitting, setSubmitting] = useState(false)
   const [draftText, setDraftText] = useState('')
+  const [pollingError, setPollingError] = useState(false)
   const pollingJobId = detail?.job.id
   const pollingJobStatus = detail?.job.status
 
   useEffect(() => {
     let active = true
-    Promise.all([profileAnalysisService.list(), billingService.status()])
-      .then(async ([{ jobs }, billingStatus]) => {
-        const next = jobs[0] ? await profileAnalysisService.get(jobs[0].id) : null
+    void Promise.allSettled([profileAnalysisService.list(), billingService.status()])
+      .then(async ([historyResult, billingResult]) => {
         if (!active) return
+        if (billingResult.status === 'fulfilled') setBilling(billingResult.value)
+        else setBillingError(true)
+        if (historyResult.status === 'rejected') {
+          toast.error('Não foi possível carregar as análises do perfil.')
+          return
+        }
+        const { jobs } = historyResult.value
         setHistory(jobs)
-        setBilling(billingStatus)
-        setDetail(next)
-        if (next?.analysis) setDraftText(JSON.stringify(next.analysis.canonicalProfileDraft, null, 2))
+        if (!jobs[0]) return
+        try {
+          const next = await profileAnalysisService.get(jobs[0].id)
+          if (!active) return
+          setDetail(next)
+          if (next.analysis) setDraftText(JSON.stringify(next.analysis.canonicalProfileDraft, null, 2))
+        } catch {
+          if (active) toast.error('Não foi possível carregar a análise mais recente.')
+        }
       })
-      .catch(() => toast.error('Não foi possível carregar as análises do perfil.'))
     return () => { active = false }
   }, [])
 
   useEffect(() => {
     if (!pollingJobId || !pollingJobStatus || TERMINAL.has(pollingJobStatus)) return
+    let failures = 0
     const timer = window.setInterval(() => {
       profileAnalysisService.get(pollingJobId)
         .then((next) => {
+          failures = 0
+          setPollingError(false)
           setDetail(next)
           setHistory((items) => items.map((item) => item.id === next.job.id ? next.job : item))
           if (next.analysis) setDraftText(JSON.stringify(next.analysis.canonicalProfileDraft, null, 2))
         })
-        .catch(() => undefined)
+        .catch(() => {
+          failures += 1
+          if (failures >= 3) setPollingError(true)
+        })
     }, 2_000)
     return () => window.clearInterval(timer)
   }, [pollingJobId, pollingJobStatus])
 
-  const canStart = Boolean(file && billing && billing.balanceCents > 0 && !submitting && (!detail || TERMINAL.has(detail.job.status)))
+  const canStart = Boolean(file && billing && billing.balanceCents >= billing.minimumAnalysisCreditsCents && !submitting && (!detail || TERMINAL.has(detail.job.status)))
   const assessment = detail?.analysis?.cvAssessment ?? {}
   const recommendations = stringArray(assessment['prioritized_recommendations'])
   const strengths = stringArray(assessment['strengths'])
@@ -162,6 +181,7 @@ export function ProfileAnalysisPanel({ currentProfile = null, compact = false }:
       if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error('Rascunho deve ser um objeto JSON.')
       const next = await profileAnalysisService.approve(detail.job.id, parsed as Record<string, unknown>)
       setDetail(next)
+      onProfileApproved?.()
       toast.success('Perfil Canônico aprovado.')
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Não foi possível aprovar o perfil.')
@@ -201,6 +221,9 @@ export function ProfileAnalysisPanel({ currentProfile = null, compact = false }:
         {billing && <span className="font-mono text-[10px] text-muted-foreground">{money(billing.balanceCents, billing.currency)}</span>}
       </header>
 
+      {billingError ? <div className="border-b border-border bg-match-partial/5 px-5 py-3 text-xs text-match-partial-foreground">Saldo temporariamente indisponível. Suas análises continuam acessíveis.</div> : null}
+      {pollingError ? <div className="border-b border-border bg-match-partial/5 px-5 py-3 text-xs text-match-partial-foreground">A atualização automática perdeu conexão. Continuaremos tentando.</div> : null}
+
       {detail && !TERMINAL.has(detail.job.status) ? (
         <div className="p-5">
           <div className="flex items-center justify-between gap-3"><div><p className="text-sm font-semibold">{STATUS_LABEL[detail.job.status]}</p><p className="mt-1 text-xs text-muted-foreground">{detail.job.currentStep ?? 'Preparando processamento'}</p></div><LoaderCircle className="size-5 animate-spin text-brand" /></div>
@@ -220,7 +243,7 @@ export function ProfileAnalysisPanel({ currentProfile = null, compact = false }:
             <select className="h-10 border border-border bg-background px-2 text-xs" onChange={(event) => setLanguage(event.target.value as ProfileAnalysisPreferences['language'])} value={language}><option value="pt">Português</option><option value="en">English</option></select>
             <select className="h-10 border border-border bg-background px-2 text-xs" onChange={(event) => setMarkets(event.target.value as ProfileAnalysisPreferences['markets'])} value={markets}><option value="both">BR + exterior</option><option value="brazil">Brasil</option><option value="international">Exterior</option></select>
           </div>
-          {billing && billing.balanceCents <= 0 ? <Link className="flex items-center justify-between border border-match-partial/30 bg-match-partial/5 p-3 text-xs text-match-partial-foreground" href="/billing"><span className="flex items-center gap-2"><WalletCards className="size-4" />Adicione créditos antes da análise.</span><ChevronRight className="size-4" /></Link> : null}
+          {billing && billing.balanceCents < billing.minimumAnalysisCreditsCents ? <Link className="flex items-center justify-between border border-match-partial/30 bg-match-partial/5 p-3 text-xs text-match-partial-foreground" href="/billing"><span className="flex items-center gap-2"><WalletCards className="size-4" />Adicione créditos antes da análise.</span><ChevronRight className="size-4" /></Link> : null}
           <Button disabled={!canStart} onClick={() => void submit()}>{submitting ? <LoaderCircle className="size-4 animate-spin" /> : <Sparkles className="size-4" />}Analisar currículo</Button>
         </div>
       )}

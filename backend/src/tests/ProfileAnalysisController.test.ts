@@ -24,7 +24,7 @@ jest.mock('@/services/billingCustomerService', () => ({
 }))
 
 jest.mock('@/services/profileDocumentService', () => ({
-  ProfileDocumentService: { remove: jest.fn(), upload: jest.fn() },
+  ProfileDocumentService: { exists: jest.fn(), remove: jest.fn(), upload: jest.fn() },
 }))
 
 const user: AuthUser = {
@@ -175,6 +175,7 @@ describe('ProfileAnalysisController', () => {
     )
 
     expect(ProfileAnalysisModel.approve).toHaveBeenCalledWith(expect.objectContaining({ jobId: 'job-1', userId: 'user-1' }))
+    expect(ProfileDocumentService.remove).toHaveBeenCalledWith('user-1/job-1/document.txt')
     expect(result.json).toHaveBeenCalledWith(expect.objectContaining({ success: true }))
   })
 

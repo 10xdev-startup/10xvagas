@@ -7,7 +7,7 @@ const STEPS = [
   { icon: Sparkles, title: 'O radar passa a ranquear por você', detail: 'Cada vaga ganha score, motivos e o que falta, comparados com o seu perfil.' },
 ]
 
-export function ProfileOnboarding(): React.JSX.Element {
+export function ProfileOnboarding({ onProfileApproved }: { onProfileApproved?: () => void }): React.JSX.Element {
   return (
     <section className="mx-auto w-full max-w-2xl px-5 py-16">
       <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Perfil Canônico</p>
@@ -34,7 +34,7 @@ export function ProfileOnboarding(): React.JSX.Element {
         ))}
       </ol>
 
-      <ProfileAnalysisPanel />
+      <ProfileAnalysisPanel onProfileApproved={onProfileApproved} />
     </section>
   )
 }

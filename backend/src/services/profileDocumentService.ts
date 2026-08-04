@@ -75,8 +75,23 @@ export const ProfileDocumentService = {
     return { documentName: originalName, documentPath }
   },
 
-  async remove(documentPath: string): Promise<void> {
+  async exists(documentPath: string): Promise<boolean> {
+    const directory = path.posix.dirname(documentPath)
+    const fileName = path.posix.basename(documentPath)
+    const { data, error } = await supabase.storage.from(PROFILE_DOCUMENT_BUCKET).list(
+      directory,
+      { limit: 2, search: fileName },
+    )
+    if (error) throw new Error(`Falha ao consultar curriculo: ${error.message}`)
+    return (data ?? []).some((item) => item.name === fileName)
+  },
+
+  async remove(documentPath: string): Promise<boolean> {
     const { error } = await supabase.storage.from(PROFILE_DOCUMENT_BUCKET).remove([documentPath])
-    if (error) console.warn('[ProfileDocumentService] falha ao remover upload orfao', { message: error.message })
+    if (error) {
+      console.warn('[ProfileDocumentService] falha ao remover curriculo', { message: error.message })
+      return false
+    }
+    return true
   },
 }

@@ -48,7 +48,7 @@ describe('ProfileAnalysisPanel', () => {
   })
 
   it('mantem upload bloqueado e orienta recarga quando nao ha saldo', async () => {
-    jest.mocked(billingService.status).mockResolvedValue({ balanceCents: 0, checkoutEnabled: false, currency: 'BRL', hasCustomer: true, packs: [] })
+    jest.mocked(billingService.status).mockResolvedValue({ balanceCents: 0, checkoutEnabled: false, currency: 'BRL', hasCustomer: true, minimumAnalysisCreditsCents: 5, packs: [] })
 
     render(<ProfileAnalysisPanel />)
 
@@ -57,7 +57,7 @@ describe('ProfileAnalysisPanel', () => {
   })
 
   it('envia o arquivo e troca imediatamente para o estado de fila', async () => {
-    jest.mocked(billingService.status).mockResolvedValue({ balanceCents: 1000, checkoutEnabled: false, currency: 'BRL', hasCustomer: true, packs: [] })
+    jest.mocked(billingService.status).mockResolvedValue({ balanceCents: 1000, checkoutEnabled: false, currency: 'BRL', hasCustomer: true, minimumAnalysisCreditsCents: 5, packs: [] })
     jest.mocked(profileAnalysisService.create).mockResolvedValue({ job: job() })
 
     const { container } = render(<ProfileAnalysisPanel />)
