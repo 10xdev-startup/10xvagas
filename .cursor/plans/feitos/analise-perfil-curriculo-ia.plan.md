@@ -39,8 +39,8 @@ Decisoes registradas antes do codigo:
    settler Node calcula a rate exata e cria Customer Balance Transaction idempotente.
 4. **Credito:** a criacao exige Customer namespaced e saldo disponivel maior que zero. O
    debito real pode consumir o saldo restante; saldo Stripe positivo representa o pequeno
-   excedente da ultima chamada e bloqueia novas analises ate novo credito. Checkout fica
-   `false` ate o fluxo de debito passar no smoke live.
+   excedente da ultima chamada e bloqueia novas analises ate novo credito. Checkout e
+   settlement foram liberados apos o smoke live idempotente de 2026-08-03.
 5. **Retry:** cria novo job com `retry_of_job_id`; o job anterior e historico imutavel.
    Identifiers de meter/debito sao derivados do `ai_usage_event.id`, nao da request HTTP.
 6. **Aprovacao:** resultado e sempre rascunho. Uma RPC transacional aprova a analise e
@@ -263,12 +263,15 @@ insuficiencia de saldo, diff, aprovacao e perfil ativo durante processamento.
 **Validacao parcial:** E2E local completo e consultas read-only de jobs, usage, meters e
 Customer Balance confirmam o contrato.
 
-**Executado sem consumo em 2026-08-03:** backend respondeu `ready` em
+**Executado em 2026-08-03:** backend respondeu `ready` em
 `localhost:3001`; frontend respondeu a landing em `localhost:3000` e protegeu
 `/profile` sem sessao com redirect para a LP; o engine `--once` conectou ao Supabase,
-encontrou a fila vazia e encerrou sem chamar o LLM. O E2E pago com curriculo real e a
-liquidacao live continuam bloqueados de proposito ate existir um Customer de teste com
-credito controlado.
+encontrou a fila vazia e encerrou sem chamar o LLM. Depois, um E2E isolado com curriculo
+ficticio processou o schema completo (`1771` input / `4249` output), preservou
+Node.js/TypeScript/PostgreSQL como desejadas, isolou helpdesk fora do matching, emitiu os
+meters de token e feature, debitou 53 centavos e ativou o perfil somente pela aprovacao.
+Um smoke separado forcou retry do mesmo usage e confirmou o mesmo balance transaction,
+saldo debitado uma unica vez e `settlement_status=settled`.
 
 **Commit sugerido:** `test(perfil): validar fluxo assincrono e recuperacao`
 

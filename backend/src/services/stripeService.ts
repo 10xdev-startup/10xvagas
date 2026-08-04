@@ -261,16 +261,18 @@ export const StripeService = {
       throw new AppError(422, 'Valor do meter event deve ser positivo', 'INVALID_METER_VALUE')
     }
     const identifier = input.identifier ?? randomUUID()
-    await getStripe().billing.meterEvents.create({
-      event_name: input.eventName,
-      identifier,
-      payload: {
-        stripe_customer_id: input.customerId,
-        value: String(value),
-        ...input.dimensions,
+    await getStripe().billing.meterEvents.create(
+      {
+        event_name: input.eventName,
+        identifier,
+        payload: {
+          stripe_customer_id: input.customerId,
+          value: String(value),
+          ...input.dimensions,
+        },
       },
-      timestamp: Math.floor(Date.now() / 1_000),
-    })
+      { idempotencyKey: `${BILLING_NAMESPACE}_meter_${identifier}` },
+    )
     return identifier
   },
 

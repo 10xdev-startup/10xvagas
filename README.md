@@ -157,5 +157,6 @@ Variaveis adicionais desta feature:
 - engine: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `STRIPE_SECRET_KEY` e
   `STRIPE_LLM_GATEWAY_URL`.
 
-`STRIPE_CHECKOUT_ENABLED` e `AI_USAGE_SETTLEMENT_ENABLED` permanecem `false` ate o smoke
-financeiro validar compra, webhook, usage, meter events, debito e saldo final.
+`STRIPE_CHECKOUT_ENABLED` e `AI_USAGE_SETTLEMENT_ENABLED` foram liberadas depois do smoke
+live de usage, rate card, meter events, debito e retry idempotente. Em ambiente novo,
+comece com ambas em `false` e so as habilite depois de repetir essa validacao.
