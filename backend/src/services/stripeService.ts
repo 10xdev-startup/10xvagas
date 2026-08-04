@@ -153,14 +153,17 @@ export const StripeService = {
   },
 
   async createCustomer(userId: string, email: string): Promise<Stripe.Customer> {
-    return getStripe().customers.create({
-      email,
-      metadata: {
-        app_user_id: userId,
-        platform: BILLING_NAMESPACE,
-        product: BILLING_NAMESPACE,
+    return getStripe().customers.create(
+      {
+        email,
+        metadata: {
+          app_user_id: userId,
+          platform: BILLING_NAMESPACE,
+          product: BILLING_NAMESPACE,
+        },
       },
-    })
+      { idempotencyKey: `${BILLING_NAMESPACE}_customer_${userId}` },
+    )
   },
 
   async getBalance(customer: Stripe.Customer): Promise<{ balanceCents: number; currency: string }> {

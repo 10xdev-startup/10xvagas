@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { Bookmark, BookmarkCheck, BriefcaseBusiness, Building2, CheckCircle2, ChevronLeft, CircleDollarSign, Clock3, ExternalLink, FileSearch, Globe2, MapPin, Radar, Search, TriangleAlert } from 'lucide-react'
 import { toast } from 'sonner'
@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils'
 import { useSavedJobs } from '@/lib/savedJobsStore'
 import { useSearchPreferences } from '@/lib/searchPreferencesStore'
 import { jobPath } from '@/lib/resourceUrl'
+import { jobService } from '@/services/jobService'
 
 type MarketFilter = 'all' | 'brazil' | 'international'
 type StatusFilter = 'all' | 'matched' | 'new'
@@ -213,6 +214,7 @@ export function JobRadar({ jobs, sources = [], brazilCount, internationalCount, 
   const [query, setQuery] = useState('')
   const [selectedId, setSelectedId] = useState(jobs[0]?.id ?? '')
   const [mobileDetailOpen, setMobileDetailOpen] = useState(false)
+  const [details, setDetails] = useState<Record<string, RadarJob>>({})
   const savedJobs = useSavedJobs()
   const { preferences } = useSearchPreferences()
 
@@ -240,7 +242,19 @@ export function JobRadar({ jobs, sources = [], brazilCount, internationalCount, 
         .includes(normalizedQuery)
     })
   }, [jobs, market, mode, preferences, query, status])
-  const selectedJob = filteredJobs.find((job) => job.id === selectedId) ?? filteredJobs[0] ?? null
+  const selectedSummary = filteredJobs.find((job) => job.id === selectedId) ?? filteredJobs[0] ?? null
+  const selectedJob = selectedSummary ? details[selectedSummary.id] ?? selectedSummary : null
+
+  useEffect(() => {
+    if (!selectedSummary || selectedSummary.description || details[selectedSummary.id]) return
+    let active = true
+    void jobService.getById(selectedSummary.publicId || selectedSummary.id)
+      .then((job) => {
+        if (active) setDetails((current) => ({ ...current, [job.id]: job }))
+      })
+      .catch(() => undefined)
+    return () => { active = false }
+  }, [details, selectedSummary])
 
   function handleToggleSaved(job: RadarJob): void {
     const nowSaved = savedJobs.toggle(job)

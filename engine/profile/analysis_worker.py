@@ -60,6 +60,7 @@ def _validate_schema(value: Any, schema: dict[str, Any], path: str = "response")
         "boolean": lambda item: isinstance(item, bool),
         "integer": lambda item: isinstance(item, int) and not isinstance(item, bool),
         "null": lambda item: item is None,
+        "number": lambda item: isinstance(item, (int, float)) and not isinstance(item, bool),
         "object": lambda item: isinstance(item, dict),
         "string": lambda item: isinstance(item, str),
     }
@@ -69,11 +70,13 @@ def _validate_schema(value: Any, schema: dict[str, Any], path: str = "response")
         return
     if "enum" in schema and value not in schema["enum"]:
         raise ProfileAnalysisError(f"Resposta estruturada possui {path} fora do enum")
-    if isinstance(value, int) and not isinstance(value, bool):
+    if isinstance(value, (int, float)) and not isinstance(value, bool):
         if "minimum" in schema and value < schema["minimum"]:
             raise ProfileAnalysisError(f"Resposta estruturada possui {path} abaixo do minimo")
         if "maximum" in schema and value > schema["maximum"]:
             raise ProfileAnalysisError(f"Resposta estruturada possui {path} acima do maximo")
+        if "exclusiveMinimum" in schema and value <= schema["exclusiveMinimum"]:
+            raise ProfileAnalysisError(f"Resposta estruturada possui {path} abaixo do minimo exclusivo")
     if isinstance(value, dict):
         required = schema.get("required", [])
         missing = [field for field in required if field not in value]
@@ -231,7 +234,9 @@ class ProfileAnalysisWorker:
                 "input_tokens": usage.input_tokens,
                 "output_tokens": usage.output_tokens,
                 "cached_tokens": usage.cached_tokens,
-                "total_tokens": usage.input_tokens + usage.output_tokens + usage.cached_tokens,
+                # O gateway inclui cached_tokens dentro de input_tokens. Cached e
+                # uma decomposicao para rate card, nao uma terceira parcela.
+                "total_tokens": usage.input_tokens + usage.output_tokens,
                 "settlement_status": "captured",
                 "updated_at": _now_iso(),
             },

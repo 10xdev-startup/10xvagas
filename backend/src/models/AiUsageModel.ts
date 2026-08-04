@@ -40,7 +40,7 @@ export const AiUsageModel = {
       .from(TABLE)
       .update({
         settlement_error: message.slice(0, 500),
-        settlement_status: permanent ? 'failed' : 'pending',
+        settlement_status: permanent ? 'failed' : 'processing',
         updated_at: new Date().toISOString(),
       })
       .eq('id', id)

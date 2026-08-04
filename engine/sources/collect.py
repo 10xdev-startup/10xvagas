@@ -4,6 +4,7 @@ import json
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
+from urllib.parse import quote
 from uuid import uuid4
 
 from engine.supabase_rest import SupabaseRestClient
@@ -133,7 +134,7 @@ def collect() -> dict[str, Any]:
         "schema_version": 1,
         "collected_at": datetime.now(UTC).isoformat(),
         "sources": source_runs,
-        "jobs": [job.to_dict() for job in jobs[:120]],
+        "jobs": [job.to_dict() for job in jobs],
     }
 
 
@@ -145,7 +146,10 @@ def upsert_jobs(
     if not jobs:
         return []
     rest = client or SupabaseRestClient.from_env()
-    payload = [{**job, "last_seen_at": collected_at} for job in jobs]
+    payload = [
+        {**job, "closed_at": None, "is_active": True, "last_seen_at": collected_at}
+        for job in jobs
+    ]
     result = rest.request(
         "job?on_conflict=source%2Cexternal_id",
         method="POST",
@@ -153,6 +157,28 @@ def upsert_jobs(
         prefer="resolution=merge-duplicates,return=representation,missing=default",
     )
     return result if isinstance(result, list) else []
+
+
+def close_stale_jobs(
+    sources: list[dict[str, Any]],
+    collected_at: str,
+    client: SupabaseRestClient | None = None,
+) -> int:
+    """Encerra ausentes apenas para fontes cujo ciclo terminou com sucesso."""
+    successful = sorted({str(source["id"]) for source in sources if source.get("status") == "ok"})
+    if not successful:
+        return 0
+    rest = client or SupabaseRestClient.from_env()
+    for source_id in successful:
+        encoded_source = quote(source_id, safe="")
+        encoded_timestamp = quote(collected_at, safe="")
+        rest.request(
+            f"job?source=eq.{encoded_source}&last_seen_at=lt.{encoded_timestamp}&is_active=eq.true",
+            method="PATCH",
+            payload={"closed_at": collected_at, "is_active": False},
+            prefer="return=minimal",
+        )
+    return len(successful)
 
 
 def record_source_runs(
@@ -190,8 +216,10 @@ def record_source_runs(
 def main() -> None:
     document = collect()
     persisted = upsert_jobs(document["jobs"], document["collected_at"])
+    closed_sources = close_stale_jobs(document["sources"], document["collected_at"])
     recorded_sources = record_source_runs(document["sources"], document["collected_at"])
     print(f"Supabase atualizado: {len(persisted)} vagas")
+    print(f"Ciclo de vida reconciliado: {closed_sources} fontes")
     print(f"Execucoes de fonte registradas: {recorded_sources}")
     for source in document["sources"]:
         print(f"- {source['label']}: {source['status']} ({source['count']})")

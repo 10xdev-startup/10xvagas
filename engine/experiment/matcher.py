@@ -48,9 +48,8 @@ class Matcher:
             for skill in profile["skills_desired"]
         }
         evidenced = profile["skills_known"]["desired_and_evidenced"]
-        secondary = profile["skills_known"]["secondary_or_limited_evidence"]
         self.known_skills = {
-            normalize_term(skill, self.aliases) for skill in [*evidenced, *secondary]
+            normalize_term(skill, self.aliases) for skill in evidenced
         }
         self.excluded_support_skills = {
             normalize_term(skill, self.aliases)
@@ -148,10 +147,14 @@ class Matcher:
         if not work_model:
             work_model = "hybrid" if "hibrid" in display else "on_site"
 
-        if work_model == "hybrid" and "hybrid" in desired_models:
-            if self._is_accepted_hybrid_location(location):
+        if work_model in {"hybrid", "onsite", "on_site"}:
+            desired_model = "onsite" if work_model == "on_site" else work_model
+            if desired_model in desired_models and self._is_accepted_local_location(location):
                 return None
-            return "Vaga hibrida fora de Belo Horizonte e regiao."
+            if desired_model == "hybrid" and desired_model in desired_models:
+                return "Vaga hibrida fora das localidades aceitas pelo perfil."
+            if desired_model == "onsite" and desired_model in desired_models:
+                return "Vaga presencial fora das localidades aceitas pelo perfil."
         return "Modelo de trabalho nao compativel com o perfil."
 
     def _region_filter_reason(self, location: dict[str, Any]) -> str | None:
@@ -190,7 +193,7 @@ class Matcher:
         fallback = settings["country_fallback"].get(country)
         return {fallback} if fallback else set()
 
-    def _is_accepted_hybrid_location(self, location: dict[str, Any]) -> bool:
+    def _is_accepted_local_location(self, location: dict[str, Any]) -> bool:
         city = str(location.get("city", "")).casefold()
         metropolitan_area = str(location.get("metropolitan_area", "")).casefold()
         display = str(location.get("display", "")).casefold()

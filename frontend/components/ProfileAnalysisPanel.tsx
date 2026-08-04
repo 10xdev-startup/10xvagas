@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react'
 import { AlertTriangle, Check, ChevronRight, FileSearch, FileUp, Languages, LoaderCircle, RefreshCw, Sparkles, Square, WalletCards } from 'lucide-react'
 import { toast } from 'sonner'
 import type { CanonicalProfile } from '@/lib/profile'
+import { applyAnswersToProfileDraft } from '@/lib/profileDraftAnswers'
 import { cn } from '@/lib/utils'
 import { billingService, type BillingStatus } from '@/services/billingService'
 import { profileAnalysisService } from '@/services/profileAnalysisService'
@@ -170,11 +171,11 @@ export function ProfileAnalysisPanel({ currentProfile = null, compact = false }:
   function applyPendingAnswers(): void {
     try {
       const parsed = JSON.parse(draftText) as Record<string, unknown>
-      parsed['human_answers'] = Object.entries(answers)
-        .filter(([, answer]) => answer.trim())
-        .map(([field, answer]) => ({ answer: answer.trim(), field, language: resultLanguage }))
-      setDraftText(JSON.stringify(parsed, null, 2))
-      toast.success('Respostas anexadas ao rascunho para a revisão final.')
+      const result = applyAnswersToProfileDraft(parsed, answers)
+      setDraftText(JSON.stringify(result.document, null, 2))
+      setAnswers((current) => Object.fromEntries(Object.entries(current).filter(([field]) => !result.appliedFields.includes(field))))
+      if (result.appliedFields.length > 0) toast.success(`${result.appliedFields.length} resposta(s) aplicada(s) aos fatos do perfil.`)
+      if (result.errors.length > 0) toast.error(result.errors.map((item) => `${item.field}: ${item.message}`).join('\n'))
     } catch {
       toast.error('Corrija o JSON do rascunho antes de aplicar as respostas.')
     }

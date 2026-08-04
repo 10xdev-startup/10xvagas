@@ -31,11 +31,28 @@ function sourceStatuses(jobs: RadarJob[]): SourceStatus[] {
   return [...sources.values(), ...ASSISTED_SOURCES]
 }
 
+function pagination(req: Request): { limit: number; offset: number } {
+  const rawLimit = req.query['limit'] ?? '50'
+  const rawOffset = req.query['offset'] ?? '0'
+  const limit = Number(rawLimit)
+  const offset = Number(rawOffset)
+  if (!Number.isInteger(limit) || limit < 1 || limit > 100 || !Number.isInteger(offset) || offset < 0) {
+    throw new AppError(422, 'Paginacao invalida', 'INVALID_PAGINATION')
+  }
+  return { limit, offset }
+}
+
 export const JobController = {
   /** GET /jobs */
   async list(req: Request, res: Response): Promise<void> {
-    const { jobs, collectedAt, sources } = await JobModel.listByUser(requireAuthUserId(req))
-    sendOk(res, { collectedAt, jobs, sources: sources.length > 0 ? sources : sourceStatuses(jobs) })
+    const options = pagination(req)
+    const { jobs, collectedAt, sources, total } = await JobModel.listByUser(requireAuthUserId(req), options)
+    sendOk(res, {
+      collectedAt,
+      jobs,
+      pagination: { ...options, hasMore: options.offset + jobs.length < total, total },
+      sources: sources.length > 0 ? sources : sourceStatuses(jobs),
+    })
   },
 
   /** GET /jobs/:id — `id` ja e UUID depois de `router.param`. */

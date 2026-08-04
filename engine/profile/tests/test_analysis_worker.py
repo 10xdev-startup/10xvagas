@@ -27,6 +27,8 @@ def schema_value(schema: dict) -> object:
         return "evidence"
     if value_type == "integer":
         return schema.get("minimum", 1)
+    if value_type == "number":
+        return schema.get("minimum", 1)
     if value_type == "boolean":
         return False
     return None
@@ -103,6 +105,22 @@ class ProfileAnalysisWorkerTests(unittest.TestCase):
         self.assertEqual(usage_patches[0]["analysis_id"], "analysis-1")
         self.assertEqual(usage_patches[0]["feature_meter_status"], "pending")
         self.assertTrue(any(patch.get("status") == "succeeded" for _, patch in client.patches))
+
+    def test_total_tokens_does_not_count_cached_input_twice(self) -> None:
+        client = FakeClient()
+        worker = ProfileAnalysisWorker(client, Mock(), worker_id="test-worker")
+        response = Mock()
+        response.api_model = "openai/gpt-5.6-terra"
+        response.finish_reason = "stop"
+        response.model = "gpt-5.6-terra"
+        response.response_id = "response-1"
+        response.usage = Mock(input_tokens=100, output_tokens=30, cached_tokens=40)
+
+        worker._update_usage_after_llm("usage-1", response)
+
+        usage_patch = next(patch for path, patch in client.patches if path.startswith("ai_usage_event?"))
+        self.assertEqual(usage_patch["total_tokens"], 130)
+        self.assertEqual(usage_patch["cached_tokens"], 40)
 
 
 if __name__ == "__main__":

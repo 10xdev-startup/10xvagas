@@ -104,6 +104,21 @@ function validateProfileDraft(value: unknown): Record<string, unknown> {
   if (!requiredGroups.every((group) => Array.isArray(known[group]))) {
     throw new AppError(422, 'Grupos de habilidades do perfil sao invalidos', 'INVALID_PROFILE_DRAFT')
   }
+  const facts = value['matching_facts']
+  if (!isRecord(facts)) {
+    throw new AppError(422, 'Fatos de matching sao obrigatorios', 'INVALID_PROFILE_DRAFT')
+  }
+  const years = facts['professional_development_years_approx']
+  const booleanFacts = [
+    'commercial_production_experience',
+    'startup_founder_experience',
+    'has_ai_project',
+    'has_completed_higher_education',
+  ]
+  if (typeof years !== 'number' || !Number.isFinite(years) || years < 0
+    || !booleanFacts.every((field) => typeof facts[field] === 'boolean')) {
+    throw new AppError(422, 'Fatos de matching estao incompletos ou invalidos', 'INVALID_PROFILE_DRAFT')
+  }
   return value
 }
 

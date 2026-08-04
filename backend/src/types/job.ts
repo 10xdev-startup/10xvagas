@@ -25,6 +25,8 @@ export interface JobRow {
   updated_at: string
 }
 
+export type JobListRow = Omit<JobRow, 'description'>
+
 export interface JobMatchRow {
   user_id: string
   job_id: string
@@ -85,6 +87,12 @@ export interface SourceRunRow {
 export interface JobListResponse {
   collectedAt: string | null
   jobs: RadarJob[]
+  pagination: {
+    hasMore: boolean
+    limit: number
+    offset: number
+    total: number
+  }
   sources: SourceStatus[]
 }
 
@@ -93,7 +101,7 @@ export type ResolveJobIdResult =
   | { status: 'not_found' }
   | { status: 'ambiguous'; ids: string[] }
 
-export function rowToRadarJob(row: JobRow, match: JobMatchRow | null): RadarJob {
+export function rowToRadarJob(row: JobRow | JobListRow, match: JobMatchRow | null): RadarJob {
   return {
     id: row.id,
     publicId: makeSlug(`${row.title} ${row.company}`, row.id),
@@ -104,7 +112,7 @@ export function rowToRadarJob(row: JobRow, match: JobMatchRow | null): RadarJob 
     sourceLabel: row.source_label,
     sourceUrl: row.source_url,
     applyUrl: row.apply_url,
-    description: row.description,
+    description: 'description' in row ? row.description : '',
     location: row.location,
     workplaceType: row.workplace_type,
     employmentType: row.employment_type,
