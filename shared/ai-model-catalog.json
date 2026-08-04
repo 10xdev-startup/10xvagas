@@ -1,0 +1,12 @@
+{
+  "defaultProfileAnalysisModelId": "gpt-5.6-terra",
+  "models": [
+    {
+      "id": "gpt-5.6-terra",
+      "provider": "openai",
+      "label": "GPT-5.6 Terra",
+      "apiModel": "openai/gpt-5.6-terra",
+      "selectable": true
+    }
+  ]
+}

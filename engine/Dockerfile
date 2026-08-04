@@ -12,6 +12,7 @@ RUN apt-get update \
   && useradd --create-home --uid 1001 engineuser
 
 COPY --chown=engineuser:engineuser engine ./engine
+COPY --chown=engineuser:engineuser shared ./shared
 
 USER engineuser
 EXPOSE 8000

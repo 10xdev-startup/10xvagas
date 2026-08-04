@@ -11,6 +11,7 @@ RUN npm ci --workspace=backend --include-workspace-root
 FROM dependencies AS builder
 
 COPY backend ./backend
+COPY shared ./shared
 RUN npm run build --workspace=backend
 
 FROM node:20-alpine AS runner
@@ -28,6 +29,7 @@ RUN npm ci --omit=dev --workspace=backend --include-workspace-root \
   && npm cache clean --force
 
 COPY --from=builder --chown=apiuser:nodejs /app/backend/dist ./backend/dist
+COPY --chown=apiuser:nodejs shared ./shared
 
 WORKDIR /app/backend
 USER apiuser
