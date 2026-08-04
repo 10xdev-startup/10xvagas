@@ -29,6 +29,23 @@ const FEATURE_EVENT_NAMES: Record<BillingFeature, string> = {
   form_answer_generated: namespacedMeterEventName('form_answer_generated'),
 }
 
+const STRIPE_API_BASE = 'https://api.stripe.com'
+const STRIPE_V2_VERSION = '2026-03-25.preview'
+
+interface StripeRateResponse {
+  unit_amount: string
+  metered_item?: {
+    meter?: string
+    meter_segment_conditions?: Array<{ dimension: string; value: string }>
+  }
+}
+
+interface TokenRate {
+  model: string
+  tokenType: TokenType
+  unitAmountCents: number
+}
+
 let client: Stripe | null = null
 
 function getStripe(): Stripe {
@@ -50,6 +67,51 @@ function getPackLookupKeys(): string[] {
 
 function customerBelongsToProduct(customer: Stripe.Customer): boolean {
   return belongsToBillingNamespace(customer.metadata)
+}
+
+async function stripeV2Get<T>(pathname: string): Promise<T> {
+  const secretKey = process.env['STRIPE_SECRET_KEY']?.trim()
+  if (!secretKey) throw new AppError(503, 'Stripe nao configurada', 'STRIPE_NOT_CONFIGURED')
+  const response = await fetch(`${STRIPE_API_BASE}${pathname}`, {
+    headers: { Authorization: `Bearer ${secretKey}`, 'Stripe-Version': STRIPE_V2_VERSION },
+  })
+  const text = await response.text()
+  if (!response.ok) throw new Error(`Stripe GET ${pathname} respondeu ${response.status}: ${text.slice(0, 300)}`)
+  return JSON.parse(text) as T
+}
+
+async function listTokenRates(): Promise<TokenRate[]> {
+  const rateCardId = process.env['STRIPE_RATE_CARD_ID']?.trim()
+  if (!rateCardId) throw new Error('RATE_CARD_NOT_CONFIGURED')
+  const meters = await getStripe().billing.meters.list({ limit: 100, status: 'active' })
+  const matchingMeters = meters.data.filter((meter) => meter.event_name === TOKEN_EVENT_NAME)
+  if (matchingMeters.length !== 1) throw new Error(`RATE_METER_AMBIGUOUS:${matchingMeters.length}`)
+  const meter = matchingMeters[0]
+  if (!meter) throw new Error('RATE_METER_NOT_FOUND')
+
+  const response = await stripeV2Get<{ data?: StripeRateResponse[] }>(
+    `/v2/billing/rate_cards/${rateCardId}/rates?limit=100`,
+  )
+  const rates: TokenRate[] = []
+  for (const rate of response.data ?? []) {
+    if (rate.metered_item?.meter !== meter.id) continue
+    const conditions = rate.metered_item.meter_segment_conditions ?? []
+    const model = conditions.find((condition) => condition.dimension === 'model')?.value
+    const tokenType = conditions.find((condition) => condition.dimension === 'token_type')?.value
+    if (!model || !isTokenType(tokenType)) continue
+    rates.push({
+      model,
+      tokenType: tokenType as TokenType,
+      unitAmountCents: Number(rate.unit_amount) * 100,
+    })
+  }
+  return rates
+}
+
+const TOKEN_TYPES_SET = new Set<TokenType>(['input', 'output', 'cached'])
+
+function isTokenType(value: string | undefined): value is TokenType {
+  return value !== undefined && TOKEN_TYPES_SET.has(value as TokenType)
 }
 
 export function getTokenMeterEventName(): string {
@@ -199,16 +261,18 @@ export const StripeService = {
       throw new AppError(422, 'Valor do meter event deve ser positivo', 'INVALID_METER_VALUE')
     }
     const identifier = input.identifier ?? randomUUID()
-    await getStripe().billing.meterEvents.create({
-      event_name: input.eventName,
-      identifier,
-      payload: {
-        stripe_customer_id: input.customerId,
-        value: String(value),
-        ...input.dimensions,
+    await getStripe().billing.meterEvents.create(
+      {
+        event_name: input.eventName,
+        identifier,
+        payload: {
+          stripe_customer_id: input.customerId,
+          value: String(value),
+          ...input.dimensions,
+        },
       },
-      timestamp: Math.floor(Date.now() / 1_000),
-    })
+      { idempotencyKey: `${BILLING_NAMESPACE}_meter_${identifier}` },
+    )
     return identifier
   },
 
@@ -239,5 +303,63 @@ export const StripeService = {
       value: 1,
       ...(params.identifier ? { identifier: params.identifier } : {}),
     })
+  },
+
+  async calculateUsageCostCents(params: {
+    cachedTokens: number
+    inputTokens: number
+    model: string
+    outputTokens: number
+  }): Promise<number> {
+    const rates = await listTokenRates()
+    const matches = (tokenType: TokenType): TokenRate[] => rates.filter(
+      (rate) => rate.model === params.model && rate.tokenType === tokenType,
+    )
+    const inputRates = matches('input')
+    const outputRates = matches('output')
+    const cachedRates = matches('cached')
+    if (inputRates.length !== 1 || outputRates.length !== 1 || (params.cachedTokens > 0 && cachedRates.length !== 1)) {
+      throw new Error(`RATE_NOT_UNIQUE:${params.model}`)
+    }
+    const inputRate = inputRates[0]
+    const outputRate = outputRates[0]
+    const cachedRate = cachedRates[0]
+    if (!inputRate || !outputRate) throw new Error(`RATE_NOT_FOUND:${params.model}`)
+    const uncachedInput = Math.max(0, params.inputTokens - params.cachedTokens)
+    const amount = uncachedInput * inputRate.unitAmountCents
+      + params.outputTokens * outputRate.unitAmountCents
+      + params.cachedTokens * (cachedRate?.unitAmountCents ?? 0)
+    return Math.max(1, Math.round(amount))
+  },
+
+  async debitUsage(params: {
+    amountCents: number
+    customerId: string
+    usageEventId: string
+    userId: string
+  }): Promise<string> {
+    if (!Number.isInteger(params.amountCents) || params.amountCents <= 0) {
+      throw new Error('INVALID_USAGE_DEBIT')
+    }
+    const customer = await StripeService.retrieveCustomer(params.customerId)
+    if (!customer || customer.metadata['app_user_id'] !== params.userId) {
+      throw new Error('CUSTOMER_NAMESPACE_MISMATCH')
+    }
+    const transaction = await getStripe().customers.createBalanceTransaction(
+      params.customerId,
+      {
+        amount: params.amountCents,
+        currency: 'brl',
+        description: '10xVagas - Consumo de analise de perfil',
+        metadata: {
+          ai_usage_event_id: params.usageEventId,
+          app_user_id: params.userId,
+          platform: BILLING_NAMESPACE,
+          product: BILLING_NAMESPACE,
+        },
+      },
+      { idempotencyKey: `${BILLING_NAMESPACE}_usage_${params.usageEventId}` },
+    )
+    return transaction.id
   },
 }

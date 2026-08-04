@@ -10,6 +10,8 @@ import subprocess
 import sys
 import tempfile
 import unicodedata
+import zipfile
+import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -165,6 +167,29 @@ def _read_pdf(path: Path) -> str:
     return process.stdout
 
 
+def _read_docx(path: Path) -> str:
+    try:
+        with zipfile.ZipFile(path) as archive:
+            document_xml = archive.read("word/document.xml")
+    except (KeyError, zipfile.BadZipFile) as error:
+        raise ProfileImportError(f"O DOCX {path} e invalido ou esta corrompido.") from error
+
+    try:
+        root = ET.fromstring(document_xml)
+    except ET.ParseError as error:
+        raise ProfileImportError(f"O DOCX {path} possui XML invalido.") from error
+
+    namespace = "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}"
+    paragraphs: list[str] = []
+    for paragraph in root.iter(f"{namespace}p"):
+        text = "".join(node.text or "" for node in paragraph.iter(f"{namespace}t")).strip()
+        if text:
+            paragraphs.append(text)
+    if not paragraphs:
+        raise ProfileImportError(f"O DOCX {path} nao possui texto extraivel.")
+    return "\n".join(paragraphs)
+
+
 def read_document(path: Path) -> SourceDocument:
     if not path.exists():
         raise ProfileImportError(f"Fonte nao encontrada: {path}")
@@ -173,6 +198,8 @@ def read_document(path: Path) -> SourceDocument:
     suffix = path.suffix.casefold()
     if suffix == ".pdf":
         content = _read_pdf(path)
+    elif suffix == ".docx":
+        content = _read_docx(path)
     elif suffix in TEXT_EXTENSIONS:
         try:
             content = path.read_text(encoding="utf-8")
@@ -181,7 +208,7 @@ def read_document(path: Path) -> SourceDocument:
                 f"{path} nao esta em UTF-8. Converta o arquivo ou use --text."
             ) from error
     else:
-        supported = ", ".join(sorted([*TEXT_EXTENSIONS, ".pdf"]))
+        supported = ", ".join(sorted([*TEXT_EXTENSIONS, ".docx", ".pdf"]))
         raise ProfileImportError(f"Formato nao suportado em {path}. Formatos: {supported}")
 
     digest = hashlib.sha256(content.encode("utf-8")).hexdigest()
@@ -202,7 +229,10 @@ def collect_documents(paths: Sequence[Path], inline_texts: Sequence[str]) -> lis
                 candidate
                 for candidate in sorted(path.rglob("*"))
                 if candidate.is_file()
-                and (candidate.suffix.casefold() in TEXT_EXTENSIONS or candidate.suffix.casefold() == ".pdf")
+                and (
+                    candidate.suffix.casefold() in TEXT_EXTENSIONS
+                    or candidate.suffix.casefold() in {".docx", ".pdf"}
+                )
             )
         else:
             files.append(path)
@@ -289,28 +319,37 @@ def _apply_desired_overrides(profile: dict[str, Any], values: Sequence[str]) -> 
 def _sanitize_skill_groups(profile: dict[str, Any], discovered: Iterable[str]) -> None:
     groups = profile.setdefault("skills_known", {})
     support_names = {_normalize(name): name for name in SUPPORT_SKILL_ALIASES}
+    desired_names = {
+        _normalize(item["name"])
+        for item in profile.get("skills_desired", [])
+        if isinstance(item, dict) and isinstance(item.get("name"), str)
+    }
     excluded = list(groups.get("known_but_not_desired_for_matching", []))
     evidenced = list(groups.get("desired_and_evidenced", []))
     secondary = list(groups.get("secondary_or_limited_evidence", []))
 
     safe_evidenced: list[str] = []
+    safe_secondary: list[str] = []
     for skill in [*evidenced, *discovered]:
         normalized = _normalize(skill)
         if normalized in support_names:
             excluded.append(support_names[normalized])
-        else:
+        elif normalized in desired_names:
             safe_evidenced.append(skill)
+        else:
+            safe_secondary.append(skill)
 
-    safe_secondary: list[str] = []
     for skill in secondary:
         normalized = _normalize(skill)
         if normalized in support_names:
             excluded.append(support_names[normalized])
+        elif normalized in desired_names:
+            safe_evidenced.append(skill)
         else:
             safe_secondary.append(skill)
 
-    # Evidencia nova vai para a lista principal; isso comprova capacidade, mas
-    # nao altera skills_desired nem, portanto, a intencao usada pelo matching.
+    # Evidencia so entra no grupo principal quando tambem expressa intencao de
+    # matching. Conhecimento real fora da intencao permanece como secundario.
     groups["desired_and_evidenced"] = _unique(safe_evidenced)
     groups["secondary_or_limited_evidence"] = _unique(safe_secondary)
     groups["known_but_not_desired_for_matching"] = _unique(excluded)
@@ -461,6 +500,29 @@ def merge_codex_response(
 ) -> dict[str, Any]:
     """Aplica a proposta do CLI sem delegar a ele a intencao de matching."""
 
+    return merge_profile_proposal(
+        deterministic_draft,
+        proposed_profile,
+        skills_evidenced=response.get("skills_evidenced", []),
+        support_skills_evidenced=response.get("support_skills_evidenced", []),
+        warnings=response.get("warnings", []),
+        mode="codex_cli",
+        extra_metadata={"codex_cli": {"runtime_integration": False, "sandbox": "read-only", "ephemeral": True}},
+    )
+
+
+def merge_profile_proposal(
+    deterministic_draft: dict[str, Any],
+    proposed_profile: dict[str, Any],
+    *,
+    skills_evidenced: Iterable[object] = (),
+    support_skills_evidenced: Iterable[object] = (),
+    warnings: Iterable[object] = (),
+    mode: str,
+    extra_metadata: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Aplica uma proposta de IA sem permitir que ela altere a intencao de matching."""
+
     # O Codex pode melhorar fatos/narrativas, mas a intencao de busca permanece
     # sob controle deterministico e explicito do usuario.
     desired_skills = copy.deepcopy(deterministic_draft.get("skills_desired", []))
@@ -473,19 +535,16 @@ def merge_codex_response(
         for value in proposed_groups.values():
             if isinstance(value, list):
                 proposed_known.extend(str(skill) for skill in value)
-    proposed_known.extend(str(skill) for skill in response.get("skills_evidenced", []))
-    proposed_known.extend(str(skill) for skill in response.get("support_skills_evidenced", []))
+    proposed_known.extend(str(skill) for skill in skills_evidenced)
+    proposed_known.extend(str(skill) for skill in support_skills_evidenced)
     _sanitize_skill_groups(result, proposed_known)
 
     metadata = copy.deepcopy(deterministic_draft["import_metadata"])
-    metadata["mode"] = "codex_cli"
-    metadata["codex_cli"] = {
-        "runtime_integration": False,
-        "sandbox": "read-only",
-        "ephemeral": True,
-    }
+    metadata["mode"] = mode
+    if extra_metadata:
+        metadata.update(copy.deepcopy(extra_metadata))
     metadata["warnings"] = _unique(
-        [*metadata.get("warnings", []), *(str(item) for item in response.get("warnings", []))]
+        [*metadata.get("warnings", []), *(str(item) for item in warnings)]
     )
     result["import_metadata"] = metadata
     result["source_files"] = deterministic_draft["source_files"]

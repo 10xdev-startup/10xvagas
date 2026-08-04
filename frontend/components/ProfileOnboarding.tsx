@@ -1,7 +1,8 @@
 import { FileUp, Sparkles, Target } from 'lucide-react'
+import { ProfileAnalysisPanel } from '@/components/ProfileAnalysisPanel'
 
 const STEPS = [
-  { icon: FileUp, title: 'Importe seu currículo', detail: 'PDF ou DOCX viram o Perfil Canônico, com experiências e stack estruturadas.' },
+  { icon: FileUp, title: 'Importe seu currículo', detail: 'PDF, DOCX ou TXT viram um rascunho de Perfil Canônico, com experiências e stack estruturadas.' },
   { icon: Target, title: 'Separe o que você quer usar', detail: 'A stack que você domina e a que você quer trabalhar são listas diferentes — é isso que evita vaga fora do alvo.' },
   { icon: Sparkles, title: 'O radar passa a ranquear por você', detail: 'Cada vaga ganha score, motivos e o que falta, comparados com o seu perfil.' },
 ]
@@ -33,10 +34,7 @@ export function ProfileOnboarding(): React.JSX.Element {
         ))}
       </ol>
 
-      <p className="mt-10 border-t border-border/70 pt-6 text-xs leading-5 text-muted-foreground">
-        A importação por conta ainda está em construção. Hoje o Perfil Canônico é gerado
-        localmente pelo engine e persistido no Supabase.
-      </p>
+      <ProfileAnalysisPanel />
     </section>
   )
 }

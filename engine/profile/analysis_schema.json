@@ -1,0 +1,245 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "canonical_profile_draft": {
+      "type": "object",
+      "properties": {
+        "identity": {
+          "type": "object",
+          "properties": {
+            "full_name": { "type": "string" },
+            "headline": {
+              "type": "object",
+              "properties": { "pt": { "type": "string" }, "en": { "type": "string" } },
+              "required": ["pt", "en"]
+            },
+            "location": {
+              "type": "object",
+              "properties": {
+                "city": { "type": "string" },
+                "state": { "type": "string" },
+                "country": { "type": "string" },
+                "timezone": { "type": "string" }
+              },
+              "required": ["city", "state", "country", "timezone"]
+            }
+          },
+          "required": ["full_name", "headline", "location"]
+        },
+        "work_preferences": {
+          "type": "object",
+          "properties": {
+            "target_roles": { "type": "array", "items": { "type": "string" } },
+            "desired_work_models": { "type": "array", "items": { "type": "string", "enum": ["remote", "hybrid", "onsite"] } },
+            "hybrid_locations": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "city": { "type": "string" },
+                  "state": { "type": "string" },
+                  "include_metropolitan_region": { "type": "boolean" }
+                },
+                "required": ["city", "state", "include_metropolitan_region"]
+              }
+            },
+            "target_markets": { "type": "array", "items": { "type": "string" } },
+            "accepted_employment_types": { "type": ["array", "null"], "items": { "type": "string" } },
+            "work_authorization_by_region": { "type": ["array", "null"], "items": { "type": "object" } },
+            "salary_expectations": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "currency": { "type": "string" },
+                  "minimum": { "type": "integer", "minimum": 0 },
+                  "maximum": { "type": ["integer", "null"], "minimum": 0 },
+                  "period": { "type": "string", "enum": ["hour", "month", "year"] },
+                  "employment_type": { "type": ["string", "null"] }
+                },
+                "required": ["currency", "minimum", "maximum", "period", "employment_type"]
+              }
+            },
+            "target_seniority": { "type": ["integer", "null"], "minimum": 1, "maximum": 5 },
+            "availability": { "type": ["string", "null"] }
+          },
+          "required": [
+            "target_roles", "desired_work_models", "hybrid_locations", "target_markets",
+            "accepted_employment_types", "work_authorization_by_region", "salary_expectations",
+            "target_seniority", "availability"
+          ]
+        },
+        "matching_facts": { "type": "object" },
+        "languages": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "language": { "type": "string" },
+              "level": { "type": "string" },
+              "confidence": { "type": "string", "enum": ["high", "medium", "low"] },
+              "evidence": { "type": "string" }
+            },
+            "required": ["language", "level", "confidence", "evidence"]
+          }
+        },
+        "skills_desired": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "priority": { "type": "integer", "minimum": 1, "maximum": 3 }
+            },
+            "required": ["name", "priority"]
+          }
+        },
+        "skills_known": {
+          "type": "object",
+          "properties": {
+            "desired_and_evidenced": { "type": "array", "items": { "type": "string" } },
+            "secondary_or_limited_evidence": { "type": "array", "items": { "type": "string" } },
+            "known_but_not_desired_for_matching": { "type": "array", "items": { "type": "string" } }
+          },
+          "required": ["desired_and_evidenced", "secondary_or_limited_evidence", "known_but_not_desired_for_matching"]
+        },
+        "experience": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "company": { "type": "string" },
+              "role": { "type": "object" },
+              "start_date": { "type": ["string", "null"] },
+              "end_date": { "type": ["string", "null"] },
+              "current": { "type": "boolean" },
+              "location": { "type": "string" },
+              "highlights": { "type": "object" }
+            },
+            "required": ["company", "role", "start_date", "end_date", "current", "location", "highlights"]
+          }
+        },
+        "projects": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "url": { "type": ["string", "null"] },
+              "summary": { "type": "object" },
+              "evidence": { "type": "array", "items": { "type": "string" } }
+            },
+            "required": ["name", "url", "summary", "evidence"]
+          }
+        },
+        "education": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "institution": { "type": "string" },
+              "program": { "type": "string" },
+              "status": { "type": "string" },
+              "expected_completion": { "type": ["string", "null"] }
+            },
+            "required": ["institution", "program", "status", "expected_completion"]
+          }
+        },
+        "narratives": {
+          "type": "object",
+          "properties": {
+            "bios": {
+              "type": "object",
+              "properties": {
+                "short": { "type": "object" },
+                "medium": { "type": "object" },
+                "long": { "type": "object" }
+              },
+              "required": ["short", "medium", "long"]
+            },
+            "star_stories": { "type": "array", "items": { "type": "object" } }
+          },
+          "required": ["bios", "star_stories"]
+        },
+        "facts_pending_confirmation": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "field": { "type": "string" },
+              "question_pt": { "type": "string" },
+              "question_en": { "type": "string" }
+            },
+            "required": ["field", "question_pt", "question_en"]
+          }
+        }
+      },
+      "required": [
+        "identity", "work_preferences", "matching_facts", "languages", "skills_desired",
+        "skills_known", "experience", "projects", "education", "narratives", "facts_pending_confirmation"
+      ]
+    },
+    "cv_assessment": {
+      "type": "object",
+      "properties": {
+        "perceived_positioning": { "type": "string" },
+        "perceived_seniority": { "type": "string" },
+        "strengths": { "type": "array", "items": { "type": "string" } },
+        "strong_evidence": { "type": "array", "items": { "type": "string" } },
+        "weak_claims": { "type": "array", "items": { "type": "string" } },
+        "experience_without_measurable_impact": { "type": "array", "items": { "type": "string" } },
+        "missing_metrics": { "type": "array", "items": { "type": "string" } },
+        "contradictions": { "type": "array", "items": { "type": "string" } },
+        "ats_risks": { "type": "array", "items": { "type": "string" } },
+        "excessive_text": { "type": "array", "items": { "type": "string" } },
+        "clarity_gaps": { "type": "array", "items": { "type": "string" } },
+        "prioritized_recommendations": { "type": "array", "items": { "type": "string" } },
+        "brazil_fit": { "type": "string" },
+        "international_fit": { "type": "string" },
+        "english_quality": { "type": ["string", "null"] }
+      },
+      "required": [
+        "perceived_positioning", "perceived_seniority", "strengths", "strong_evidence",
+        "weak_claims", "experience_without_measurable_impact", "missing_metrics", "contradictions",
+        "ats_risks", "excessive_text", "clarity_gaps", "prioritized_recommendations",
+        "brazil_fit", "international_fit", "english_quality"
+      ]
+    },
+    "source_evidence": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "field": { "type": "string" },
+          "source": { "type": "string" },
+          "page_or_section": { "type": ["string", "null"] },
+          "excerpt_summary": { "type": "string" },
+          "confidence": { "type": "string", "enum": ["high", "medium", "low"] },
+          "kind": { "type": "string", "enum": ["explicit", "inference"] }
+        },
+        "required": ["field", "source", "page_or_section", "excerpt_summary", "confidence", "kind"]
+      }
+    },
+    "pending_questions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "field": { "type": "string" },
+          "question_pt": { "type": "string" },
+          "question_en": { "type": "string" },
+          "reason": { "type": "string" }
+        },
+        "required": ["field", "question_pt", "question_en", "reason"]
+      }
+    },
+    "skills_evidenced": { "type": "array", "items": { "type": "string" } },
+    "support_skills_evidenced": { "type": "array", "items": { "type": "string" } },
+    "warnings": { "type": "array", "items": { "type": "string" } }
+  },
+  "required": [
+    "canonical_profile_draft", "cv_assessment", "source_evidence", "pending_questions",
+    "skills_evidenced", "support_skills_evidenced", "warnings"
+  ]
+}

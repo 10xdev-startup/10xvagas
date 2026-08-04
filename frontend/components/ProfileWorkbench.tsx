@@ -1,21 +1,17 @@
 'use client'
 
 import { useState } from 'react'
-import { Clipboard, Code2, FileText, Languages, MapPin, ShieldCheck, Sparkles, Target, TriangleAlert } from 'lucide-react'
-import { toast } from 'sonner'
+import { Code2, FileText, Languages, MapPin, ShieldCheck, Target, TriangleAlert } from 'lucide-react'
 import type { CanonicalProfile } from '@/lib/profile'
 import { cn } from '@/lib/utils'
 import { SearchPreferencesPanel } from '@/components/SearchPreferencesPanel'
+import { ProfileAnalysisPanel } from '@/components/ProfileAnalysisPanel'
 
 function humanize(value: string): string { return value.replaceAll('_', ' ').replace(/\b\w/g, (letter) => letter.toUpperCase()) }
 
 export function ProfileWorkbench({ profile }: { profile: CanonicalProfile }) {
   const [language, setLanguage] = useState<'pt' | 'en'>('pt')
   const completion = Math.round((1 - profile.facts_pending_confirmation.length / (profile.facts_pending_confirmation.length + 30)) * 100)
-  const command = 'npm run profile:import -- --input /caminho/curriculo.pdf --input /caminho/portfolio/src/data --use-codex'
-
-  async function copyCommand() { await navigator.clipboard.writeText(command); toast.success('Comando copiado.') }
-
   return (
     <main className="mx-auto w-full max-w-[1500px] pb-12">
       <header className="grid gap-7 border-b border-border/70 pb-7 pt-2 lg:grid-cols-[1fr_auto] lg:items-end">
@@ -36,7 +32,7 @@ export function ProfileWorkbench({ profile }: { profile: CanonicalProfile }) {
 
         <aside className="space-y-6">
           <SearchPreferencesPanel />
-          <article className="border border-brand/25 bg-brand/[0.045] p-5"><div className="flex items-center gap-2"><Sparkles className="size-4 text-brand" /><h2 className="text-sm font-semibold">Importar com Codex CLI</h2></div><p className="mt-3 text-xs leading-5 text-muted-foreground">Rode localmente: o CV e o portfólio viram um rascunho estruturado. Nada é enviado pelo navegador.</p><div className="mt-4 border border-border bg-background p-3"><code className="break-all font-mono text-[10px] leading-5 text-secondary-foreground">{command}</code></div><button className="mt-3 inline-flex min-h-10 items-center gap-2 text-xs font-semibold text-brand" onClick={copyCommand}><Clipboard className="size-3.5" />Copiar comando</button></article>
+          <ProfileAnalysisPanel compact currentProfile={profile} />
           <article className="border border-border bg-card p-5"><div className="flex items-center gap-2"><FileText className="size-4 text-brand" /><h2 className="text-sm font-semibold">Busca atual</h2></div><dl className="mt-5 space-y-4 text-xs"> <div><dt className="text-muted-foreground">Cargos</dt><dd className="mt-1 text-secondary-foreground">{profile.work_preferences.target_roles.map(humanize).join(' · ')}</dd></div><div><dt className="text-muted-foreground">Modelos</dt><dd className="mt-1 text-secondary-foreground">Remoto + híbrido em BH e região metropolitana</dd></div><div><dt className="text-muted-foreground">Mercados</dt><dd className="mt-1 text-secondary-foreground">Brasil + exterior remoto</dd></div></dl></article>
           <article className="border border-border bg-card p-5"><div className="flex items-center gap-2"><Code2 className="size-4 text-match-partial" /><h2 className="text-sm font-semibold">Decisões pendentes</h2></div><ol className="mt-4 space-y-4">{profile.facts_pending_confirmation.map((fact,index) => <li className="flex gap-3 text-xs leading-5 text-muted-foreground" key={fact.question_pt}><span className="font-mono text-[9px] text-match-partial-foreground">{String(index+1).padStart(2,'0')}</span>{fact.question_pt}</li>)}</ol></article>
           <article className="flex items-start gap-3 border border-border p-5"><Languages className="mt-0.5 size-4 text-brand" /><p className="text-xs leading-5 text-muted-foreground">Narrativas e experiências já estão disponíveis em português e inglês para CVs internacionais.</p></article>

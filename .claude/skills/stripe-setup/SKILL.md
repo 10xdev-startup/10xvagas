@@ -41,8 +41,10 @@ cada webhook aceitar silenciosamente o checkout irmão quando o seu campo estive
 | `10xvagas_cv_adapted` | — |
 | `10xvagas_form_answer_generated` | — |
 
-O backend Node emite por `backend/src/services/stripeService.ts`. O engine Python usa
-`engine/billing/stripe_meter.py`, sem SDK externo, e rejeita nomes fora dessa allowlist.
+O backend Node é o único emissor, por `backend/src/services/stripeService.ts`. O engine
+Python apenas persiste usage e identifiers em `ai_usage_event`; ele nunca movimenta
+Customer Balance nem emite meter. Essa fronteira evita dois processos tentando liquidar
+o mesmo consumo.
 
 ## Recursos de créditos
 
@@ -59,6 +61,8 @@ O backend Node emite por `backend/src/services/stripeService.ts`. O engine Pytho
 STRIPE_SECRET_KEY=sk_test_...
 STRIPE_WEBHOOK_SECRET=whsec_...
 STRIPE_CHECKOUT_ENABLED=false
+STRIPE_RATE_CARD_ID=rcd_...
+AI_USAGE_SETTLEMENT_ENABLED=false
 STRIPE_CREDITS_PACK_LOOKUP_KEYS=10xvagas_credits_brl_10,10xvagas_credits_brl_25,10xvagas_credits_brl_50,10xvagas_credits_brl_100
 FRONTEND_URL=http://localhost:3000
 ```
@@ -131,6 +135,31 @@ Evite cobrança dupla: hoje o custo financeiro é aplicado explicitamente no Cus
 Balance; meter é auditoria/observabilidade. Se no futuro a cobrança migrar para invoices por
 meter, retire uma das emissões antes de ativar rates faturáveis.
 
+### Idempotência de meter e débito
+
+O identifier persistido do meter é necessário, mas não suficiente para retry. Em smoke
+live, reenviar apenas o mesmo `identifier` foi rejeitado como duplicata e deixou a
+liquidação pendente. Toda emissão deve usar também uma `Idempotency-Key` determinística:
+
+```text
+identifier:      <usage_event_id>:input
+idempotency-key: 10xvagas_meter_<usage_event_id>:input
+```
+
+O corpo precisa ser byte-equivalente no retry. Não envie um `timestamp` calculado no
+momento da tentativa junto da mesma idempotency key; omita-o para a Stripe atribuir o
+horário, ou persista o timestamp original antes do primeiro envio. Use uma chave separada
+por `input`, `output`, `cached` e feature.
+
+O débito usa `10xvagas_usage_<usage_event_id>` e Customer Balance Transaction positiva.
+Identifiers e chaves vêm de identidades persistidas, nunca da request HTTP. Um smoke só
+está aprovado quando força a mesma liquidação duas vezes e confirma, após a segunda:
+
+- `settlement_status=settled`;
+- o mesmo `stripe_balance_transaction_id`;
+- saldo debitado uma única vez;
+- `meter_status=emitted` sem erro de identifier duplicado.
+
 ## Banco
 
 O domínio usa `public.users.stripe_customer_id`. DDL pela Supabase Management API ou SQL
@@ -153,5 +182,7 @@ create unique index if not exists users_stripe_customer_id_key
 - [ ] Customer e Checkout com `product` e `platform`.
 - [ ] Webhook fail closed e assinatura validada sobre raw body.
 - [ ] Checkout repetido não credita duas vezes (idempotency key pelo PaymentIntent).
+- [ ] Retry de usage reutiliza identifier, idempotency key e corpo estável por token type.
+- [ ] `10xvagas_profile_extracted` só é emitido depois de análise estruturada válida.
 - [ ] Node, frontend e engine com testes focados verdes.
 - [ ] Nenhum segredo ou `whsec` em commit/log.

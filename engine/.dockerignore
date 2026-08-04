@@ -1,0 +1,7 @@
+__pycache__
+*.pyc
+tests
+**/tests
+sources/output
+experiment/output
+experiment/data

@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express'
 import type Stripe from 'stripe'
 import { BillingModel } from '@/models/BillingModel'
+import { BillingCustomerService } from '@/services/billingCustomerService'
 import { isStripeCheckoutEnabled, StripeService } from '@/services/stripeService'
 import type { CheckoutMetadata } from '@/types/billing'
 import { AppError } from '@/utils/AppError'
@@ -16,18 +17,6 @@ function parseMetadata(metadata: Stripe.Metadata | null): CheckoutMetadata | nul
 
 function stripeObjectId(value: string | { id: string } | null): string | null {
   return typeof value === 'string' ? value : value?.id ?? null
-}
-
-async function getOrCreateCustomer(userId: string, email: string): Promise<Stripe.Customer> {
-  const storedId = await BillingModel.getCustomerId(userId)
-  if (storedId) {
-    const customer = await StripeService.retrieveCustomer(storedId)
-    if (customer) return customer
-  }
-
-  const customer = await StripeService.createCustomer(userId, email)
-  await BillingModel.setCustomerId(userId, customer.id)
-  return customer
 }
 
 export const BillingController = {
@@ -83,7 +72,7 @@ export const BillingController = {
       throw new AppError(422, 'lookupKey e obrigatorio', 'LOOKUP_KEY_REQUIRED')
     }
 
-    const customer = await getOrCreateCustomer(user.id, user.email)
+    const customer = await BillingCustomerService.getOrCreate(user.id, user.email)
     const frontendUrl = process.env['FRONTEND_URL']?.trim() || 'http://localhost:3000'
     const url = await StripeService.createCheckout({
       cancelUrl: `${frontendUrl}/billing?checkout=canceled`,

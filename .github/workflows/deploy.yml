@@ -26,8 +26,10 @@ env:
   RESOURCE_GROUP: resource-10xvagas
   BACKEND_APP: web-backend-10xvagas # nome do Web App do backend
   FRONTEND_APP: web-frontend-10xvagas # nome do Web App do frontend
+  ENGINE_APP: web-engine-10xvagas # worker Python dedicado
   BACKEND_IMAGE: 10xvagas-backend
   FRONTEND_IMAGE: 10xvagas-frontend
+  ENGINE_IMAGE: 10xvagas-engine
   BACKEND_PUBLIC_URL: https://web-backend-10xvagas.azurewebsites.net # backend de prod (build-arg do front)
 
 jobs:
@@ -40,7 +42,7 @@ jobs:
     steps:
       - name: Preflight — checar se o workflow foi configurado
         run: |
-          if printf '%s ' "${{ env.ACR_NAME }}" "${{ env.RESOURCE_GROUP }}" "${{ env.BACKEND_APP }}" "${{ env.FRONTEND_APP }}" "${{ env.BACKEND_IMAGE }}" "${{ env.FRONTEND_IMAGE }}" "${{ env.BACKEND_PUBLIC_URL }}" | grep -q 'seu-'; then
+          if printf '%s ' "${{ env.ACR_NAME }}" "${{ env.RESOURCE_GROUP }}" "${{ env.BACKEND_APP }}" "${{ env.FRONTEND_APP }}" "${{ env.ENGINE_APP }}" "${{ env.BACKEND_IMAGE }}" "${{ env.FRONTEND_IMAGE }}" "${{ env.ENGINE_IMAGE }}" "${{ env.BACKEND_PUBLIC_URL }}" | grep -q 'seu-'; then
             echo "::error::Workflow nao configurado. Edite o bloco 'env:' de .github/workflows/deploy.yml com os nomes reais dos recursos (ACR, resource group, Web Apps...) e configure os Secrets. Rode a skill /deploy-azure para o passo a passo. Abortando."
             exit 1
           fi
@@ -95,6 +97,11 @@ jobs:
             -f frontend/Dockerfile .
           docker push ${{ env.ACR_NAME }}.azurecr.io/${{ env.FRONTEND_IMAGE }}:latest
 
+      - name: Build and push engine image
+        run: |
+          docker build -f engine/Dockerfile -t ${{ env.ACR_NAME }}.azurecr.io/${{ env.ENGINE_IMAGE }}:latest .
+          docker push ${{ env.ACR_NAME }}.azurecr.io/${{ env.ENGINE_IMAGE }}:latest
+
       - name: Deploy containers to Azure Web Apps
         run: |
           az webapp config container set \
@@ -105,6 +112,10 @@ jobs:
             --name ${{ env.FRONTEND_APP }} \
             --resource-group ${{ env.RESOURCE_GROUP }} \
             --docker-custom-image-name ${{ env.ACR_NAME }}.azurecr.io/${{ env.FRONTEND_IMAGE }}:latest
+          az webapp config container set \
+            --name ${{ env.ENGINE_APP }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --docker-custom-image-name ${{ env.ACR_NAME }}.azurecr.io/${{ env.ENGINE_IMAGE }}:latest
 
       - name: Configure runtime settings
         run: |
@@ -118,6 +129,10 @@ jobs:
               STRIPE_WEBHOOK_SECRET=${{ secrets.STRIPE_WEBHOOK_SECRET }} \
               STRIPE_CHECKOUT_ENABLED=${{ vars.STRIPE_CHECKOUT_ENABLED || 'false' }} \
               STRIPE_CREDITS_PACK_LOOKUP_KEYS=10xvagas_credits_brl_10,10xvagas_credits_brl_25,10xvagas_credits_brl_50,10xvagas_credits_brl_100 \
+              STRIPE_RATE_CARD_ID=${{ vars.STRIPE_RATE_CARD_ID }} \
+              STRIPE_LLM_GATEWAY_URL=https://llm.stripe.com \
+              PROFILE_ANALYSIS_MODEL_ID=gpt-5.6-terra \
+              AI_USAGE_SETTLEMENT_ENABLED=${{ vars.AI_USAGE_SETTLEMENT_ENABLED || 'false' }} \
               FRONTEND_URL=${{ secrets.FRONTEND_URL || format('https://{0}.azurewebsites.net', env.FRONTEND_APP) }} \
               CORS_ORIGINS=${{ secrets.CORS_ORIGINS || format('https://{0}.azurewebsites.net', env.FRONTEND_APP) }} \
               WEBSITES_PORT=3001
@@ -126,9 +141,20 @@ jobs:
             --resource-group ${{ env.RESOURCE_GROUP }} \
             --settings \
               WEBSITES_PORT=8080
+          az webapp config appsettings set \
+            --name ${{ env.ENGINE_APP }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --settings \
+              SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }} \
+              SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }} \
+              STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY }} \
+              STRIPE_LLM_GATEWAY_URL=https://llm.stripe.com \
+              PROFILE_ANALYSIS_MODEL_ID=gpt-5.6-terra \
+              WEBSITES_PORT=8000
 
       - name: Restart Azure Web Apps
         run: |
           az webapp restart --name ${{ env.BACKEND_APP }} --resource-group ${{ env.RESOURCE_GROUP }}
           az webapp restart --name ${{ env.FRONTEND_APP }} --resource-group ${{ env.RESOURCE_GROUP }}
+          az webapp restart --name ${{ env.ENGINE_APP }} --resource-group ${{ env.RESOURCE_GROUP }}
           echo "✅ Deploy concluido!"
