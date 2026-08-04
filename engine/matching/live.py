@@ -12,6 +12,8 @@ from engine.supabase_rest import SupabaseRestClient
 
 
 CONFIG_PATH = Path(__file__).resolve().parents[1] / "experiment" / "config" / "matching-weights.json"
+READ_PAGE_SIZE = 500
+WRITE_BATCH_SIZE = 200
 
 
 def load_matching_config() -> dict[str, Any]:
@@ -196,12 +198,24 @@ def _validate_profile(profile: dict[str, Any]) -> None:
         raise ValueError("matching_facts invalidos: " + ", ".join(invalid_facts))
 
 
+def _read_all(rest: SupabaseRestClient, resource: str) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    offset = 0
+    while True:
+        separator = "&" if "?" in resource else "?"
+        page = rest.request(f"{resource}{separator}offset={offset}&limit={READ_PAGE_SIZE}")
+        if not isinstance(page, list):
+            return rows
+        rows.extend(item for item in page if isinstance(item, dict))
+        if len(page) < READ_PAGE_SIZE:
+            return rows
+        offset += READ_PAGE_SIZE
+
+
 def match_all_users(client: SupabaseRestClient | None = None) -> dict[str, int]:
     rest = client or SupabaseRestClient.from_env()
-    profiles = rest.request("profile?select=user_id%2Cdocument")
-    jobs = rest.request("job?select=*&is_active=eq.true&order=last_seen_at.desc&limit=1000")
-    if not isinstance(profiles, list) or not isinstance(jobs, list):
-        return {"users": 0, "jobs": 0, "matches": 0, "failed_users": 0}
+    profiles = _read_all(rest, "profile?select=user_id%2Cdocument")
+    jobs = _read_all(rest, "job?select=*&is_active=eq.true&order=last_seen_at.desc")
 
     config = load_matching_config()
     matched_at = datetime.now(UTC).isoformat()
@@ -237,11 +251,11 @@ def match_all_users(client: SupabaseRestClient | None = None) -> dict[str, int]:
             }
             for rank, (job, result) in enumerate(ranked, start=1)
         ]
-        if payload:
+        for start in range(0, len(payload), WRITE_BATCH_SIZE):
             rest.request(
                 "job_match?on_conflict=user_id%2Cjob_id",
                 method="POST",
-                payload=payload,
+                payload=payload[start:start + WRITE_BATCH_SIZE],
                 prefer="resolution=merge-duplicates,return=minimal,missing=default",
             )
         processed_users += 1

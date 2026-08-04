@@ -14,6 +14,7 @@ from engine.sources.models import SourceAdapter, SourceConfig, SourceJob
 
 BASE_DIR = Path(__file__).resolve().parent
 REGISTRY_PATH = BASE_DIR / "registry.json"
+WRITE_BATCH_SIZE = 200
 
 ADAPTERS: dict[str, SourceAdapter] = {
     adapter.source_type: adapter
@@ -150,13 +151,17 @@ def upsert_jobs(
         {**job, "closed_at": None, "is_active": True, "last_seen_at": collected_at}
         for job in jobs
     ]
-    result = rest.request(
-        "job?on_conflict=source%2Cexternal_id",
-        method="POST",
-        payload=payload,
-        prefer="resolution=merge-duplicates,return=representation,missing=default",
-    )
-    return result if isinstance(result, list) else []
+    persisted: list[dict[str, Any]] = []
+    for start in range(0, len(payload), WRITE_BATCH_SIZE):
+        result = rest.request(
+            "job?on_conflict=source%2Cexternal_id",
+            method="POST",
+            payload=payload[start:start + WRITE_BATCH_SIZE],
+            prefer="resolution=merge-duplicates,return=representation,missing=default",
+        )
+        if isinstance(result, list):
+            persisted.extend(item for item in result if isinstance(item, dict))
+    return persisted
 
 
 def close_stale_jobs(
@@ -204,12 +209,13 @@ def record_source_runs(
         }
         for source in sources
     ]
-    rest.request(
-        "source_run",
-        method="POST",
-        payload=payload,
-        prefer="return=minimal",
-    )
+    for start in range(0, len(payload), WRITE_BATCH_SIZE):
+        rest.request(
+            "source_run",
+            method="POST",
+            payload=payload[start:start + WRITE_BATCH_SIZE],
+            prefer="return=minimal",
+        )
     return len(payload)
 
 
