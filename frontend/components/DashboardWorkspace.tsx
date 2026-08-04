@@ -22,6 +22,7 @@ function formatSnapshotDate(value: string | null): string {
 
 export function DashboardWorkspace() {
   const [state, setState] = useState<LoadState>({ status: 'loading' })
+  const [loadingMore, setLoadingMore] = useState(false)
 
   const load = useCallback(() => {
     setState({ status: 'loading' })
@@ -35,6 +36,30 @@ export function DashboardWorkspace() {
       .then((data) => setState({ status: 'ready', data }))
       .catch(() => setState({ status: 'error' }))
   }, [])
+
+  async function loadMore(): Promise<void> {
+    if (state.status !== 'ready' || !state.data.pagination.hasMore || loadingMore) return
+    try {
+      setLoadingMore(true)
+      const next = await jobService.list({ limit: state.data.pagination.limit, offset: state.data.jobs.length })
+      setState({
+        status: 'ready',
+        data: {
+          ...next,
+          jobs: [...state.data.jobs, ...next.jobs].sort((first, second) => {
+            if (first.rank !== null && second.rank !== null) return first.rank - second.rank
+            if (first.rank !== null) return -1
+            if (second.rank !== null) return 1
+            return 0
+          }),
+        },
+      })
+    } catch {
+      setState({ status: 'error' })
+    } finally {
+      setLoadingMore(false)
+    }
+  }
 
   const data = state.status === 'ready' ? state.data : null
   const jobs = data?.jobs ?? []
@@ -77,7 +102,7 @@ export function DashboardWorkspace() {
       <div className="mt-8">
         {state.status === 'loading' && <div className="flex min-h-[420px] items-center justify-center border border-border bg-card"><div className="text-center"><LoaderCircle className="mx-auto size-6 animate-spin text-brand" /><p className="mt-3 text-sm font-medium">Sincronizando seu radar</p><p className="mt-1 text-xs text-muted-foreground">Buscando vagas e matches no backend.</p></div></div>}
         {state.status === 'error' && <div className="flex min-h-[420px] items-center justify-center border border-border bg-card"><div className="max-w-sm text-center"><p className="text-sm font-semibold">Não foi possível carregar o radar.</p><p className="mt-2 text-xs leading-5 text-muted-foreground">Confira se o backend está disponível e tente novamente.</p><Button className="mt-5" onClick={load} variant="outline"><RotateCcw />Tentar novamente</Button></div></div>}
-        {data && <JobRadar brazilCount={brazilCount} internationalCount={internationalCount} jobs={jobs} sources={data.sources} />}
+        {data && <><JobRadar brazilCount={brazilCount} internationalCount={internationalCount} jobs={jobs} sources={data.sources} />{data.pagination.hasMore && <div className="mt-4 flex justify-center"><Button disabled={loadingMore} onClick={() => void loadMore()} variant="outline">{loadingMore ? <LoaderCircle className="animate-spin" /> : null}Carregar mais vagas ({jobs.length}/{data.pagination.total})</Button></div>}</>}
       </div>
     </main>
   )

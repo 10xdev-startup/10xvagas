@@ -110,7 +110,7 @@ def location_contract(row: dict[str, Any]) -> dict[str, Any]:
     location = normalized_text(display)
     workplace = normalized_text(str(row.get("workplace_type") or ""))
     remote = "remote" in workplace or "remot" in workplace
-    work_model = "remote" if remote else "hybrid" if "hybrid" in workplace or "hibrid" in workplace else "on_site"
+    work_model = "remote" if remote else "hybrid" if "hybrid" in workplace or "hibrid" in workplace else "onsite"
     eligible_regions: list[str] = []
     if any(term in location for term in ("worldwide", "anywhere", "global")):
         eligible_regions.append("GLOBAL")
@@ -177,12 +177,29 @@ def _validate_profile(profile: dict[str, Any]) -> None:
     missing = [field for field in required if not profile.get(field)]
     if missing:
         raise ValueError("Perfil incompleto: " + ", ".join(missing))
+    facts = profile["matching_facts"]
+    required_facts = {
+        "professional_development_years_approx": (int, float),
+        "commercial_production_experience": (bool,),
+        "startup_founder_experience": (bool,),
+        "has_ai_project": (bool,),
+        "has_completed_higher_education": (bool,),
+    }
+    invalid_facts = [
+        name
+        for name, expected_types in required_facts.items()
+        if name not in facts
+        or not isinstance(facts[name], expected_types)
+        or (name == "professional_development_years_approx" and isinstance(facts[name], bool))
+    ]
+    if invalid_facts:
+        raise ValueError("matching_facts invalidos: " + ", ".join(invalid_facts))
 
 
 def match_all_users(client: SupabaseRestClient | None = None) -> dict[str, int]:
     rest = client or SupabaseRestClient.from_env()
     profiles = rest.request("profile?select=user_id%2Cdocument")
-    jobs = rest.request("job?select=*&order=last_seen_at.desc&limit=1000")
+    jobs = rest.request("job?select=*&is_active=eq.true&order=last_seen_at.desc&limit=1000")
     if not isinstance(profiles, list) or not isinstance(jobs, list):
         return {"users": 0, "jobs": 0, "matches": 0, "failed_users": 0}
 

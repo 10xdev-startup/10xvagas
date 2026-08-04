@@ -78,6 +78,13 @@ function analysis(): ProfileAnalysisRow {
     approved_at: null,
     canonical_profile_draft: {
       identity: {},
+      matching_facts: {
+        commercial_production_experience: true,
+        has_ai_project: true,
+        has_completed_higher_education: false,
+        professional_development_years_approx: 2,
+        startup_founder_experience: true,
+      },
       skills_desired: [],
       skills_known: {
         desired_and_evidenced: [],
@@ -169,5 +176,22 @@ describe('ProfileAnalysisController', () => {
 
     expect(ProfileAnalysisModel.approve).toHaveBeenCalledWith(expect.objectContaining({ jobId: 'job-1', userId: 'user-1' }))
     expect(result.json).toHaveBeenCalledWith(expect.objectContaining({ success: true }))
+  })
+
+  it('rejeita rascunho sem os fatos consumidos pelo matcher', async () => {
+    const invalid = analysis()
+    invalid.canonical_profile_draft = {
+      ...invalid.canonical_profile_draft,
+      matching_facts: {},
+    }
+    jest.mocked(ProfileAnalysisModel.findJobByUser).mockResolvedValue(job('succeeded'))
+    jest.mocked(ProfileAnalysisModel.findAnalysisByJob).mockResolvedValue(invalid)
+    const result = response()
+
+    await expect(ProfileAnalysisController.approve(
+      { body: {}, params: { id: 'job-1' }, user } as unknown as Request,
+      result.res,
+    )).rejects.toMatchObject({ code: 'INVALID_PROFILE_DRAFT', status: 422 })
+    expect(ProfileAnalysisModel.approve).not.toHaveBeenCalled()
   })
 })

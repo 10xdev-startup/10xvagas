@@ -14,11 +14,11 @@ describe('jobService', () => {
 
   it('lista vagas pelo apiClient que desembrulha o envelope', async () => {
     const get = apiClient.get as MockedFunction<typeof apiClient.get>
-    get.mockResolvedValue({ collectedAt: null, jobs: [], sources: [] } as never)
+    get.mockResolvedValue({ collectedAt: null, jobs: [], pagination: { hasMore: false, limit: 100, offset: 0, total: 0 }, sources: [] } as never)
 
     await jobService.list()
 
-    expect(get).toHaveBeenCalledWith('/jobs')
+    expect(get).toHaveBeenCalledWith('/jobs?limit=100&offset=0')
   })
 
   it('codifica slug antes de buscar o detalhe', async () => {

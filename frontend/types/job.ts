@@ -35,5 +35,6 @@ export type SourceStatus = {
 export type JobListResponse = {
   collectedAt: string | null
   jobs: RadarJob[]
+  pagination: { hasMore: boolean; limit: number; offset: number; total: number }
   sources: SourceStatus[]
 }

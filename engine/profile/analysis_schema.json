@@ -46,7 +46,7 @@
             },
             "target_markets": { "type": "array", "items": { "type": "string" } },
             "accepted_employment_types": { "type": ["array", "null"], "items": { "type": "string" } },
-            "work_authorization_by_region": { "type": ["array", "null"], "items": { "type": "object" } },
+            "work_authorization_by_region": { "type": ["array", "null"], "items": { "type": "string", "minLength": 1 } },
             "salary_expectations": {
               "type": "array",
               "items": {
@@ -62,7 +62,8 @@
               }
             },
             "target_seniority": { "type": ["integer", "null"], "minimum": 1, "maximum": 5 },
-            "availability": { "type": ["string", "null"] }
+            "availability": { "type": ["string", "null"] },
+            "clt_equivalence_factor": { "type": ["number", "null"], "exclusiveMinimum": 0 }
           },
           "required": [
             "target_roles", "desired_work_models", "hybrid_locations", "target_markets",
@@ -70,7 +71,21 @@
             "target_seniority", "availability"
           ]
         },
-        "matching_facts": { "type": "object" },
+        "matching_facts": {
+          "type": "object",
+          "properties": {
+            "professional_development_years_approx": { "type": "number", "minimum": 0 },
+            "commercial_production_experience": { "type": "boolean" },
+            "startup_founder_experience": { "type": "boolean" },
+            "has_ai_project": { "type": "boolean" },
+            "has_completed_higher_education": { "type": "boolean" }
+          },
+          "required": [
+            "professional_development_years_approx", "commercial_production_experience",
+            "startup_founder_experience", "has_ai_project", "has_completed_higher_education"
+          ],
+          "additionalProperties": true
+        },
         "languages": {
           "type": "array",
           "items": {

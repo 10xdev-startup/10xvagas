@@ -63,16 +63,29 @@ describe('JobController', () => {
       jobs: [job],
       collectedAt: '2026-08-03T13:00:00.000Z',
       sources: [{ id: 'lever', label: 'Lever', mode: 'automatic', status: 'ok', count: 1, lastRunAt: '2026-08-03T13:00:00.000Z', error: null }],
+      total: 1,
     })
     const { res, json } = response()
 
-    await JobController.list({ user: authUser, body: { user_id: 'attacker' } } as Request, res)
+    await JobController.list({ user: authUser, body: { user_id: 'attacker' }, query: {} } as unknown as Request, res)
 
-    expect(listByUserMock).toHaveBeenCalledWith(authUser.id)
+    expect(listByUserMock).toHaveBeenCalledWith(authUser.id, { limit: 50, offset: 0 })
     expect(json).toHaveBeenCalledWith({
       success: true,
-      data: expect.objectContaining({ jobs: [job], sources: expect.any(Array) }),
+      data: expect.objectContaining({
+        jobs: [job],
+        pagination: { hasMore: false, limit: 50, offset: 0, total: 1 },
+        sources: expect.any(Array),
+      }),
     })
+  })
+
+  it('rejeita paginação acima do limite do endpoint', async () => {
+    const { res } = response()
+    const req = { query: { limit: '500', offset: '0' }, user: authUser } as unknown as Request
+
+    await expect(JobController.list(req, res)).rejects.toMatchObject({ code: 'INVALID_PAGINATION', status: 422 })
+    expect(listByUserMock).not.toHaveBeenCalled()
   })
 
   it('busca detalhe com UUID ja resolvido e o user_id da sessao', async () => {

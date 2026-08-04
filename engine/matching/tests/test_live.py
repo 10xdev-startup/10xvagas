@@ -73,6 +73,7 @@ class LiveJobNormalizerTest(unittest.TestCase):
             match_all_users(client),
             {"users": 1, "jobs": 2, "matches": 2, "failed_users": 0},
         )
+        self.assertIn("is_active=eq.true", client.request.call_args_list[1].args[0])
         call = client.request.call_args_list[2]
         self.assertEqual(call.args[0], "job_match?on_conflict=user_id%2Cjob_id")
         payload = call.kwargs["payload"]
@@ -94,6 +95,20 @@ class LiveJobNormalizerTest(unittest.TestCase):
         self.assertEqual(
             match_all_users(client),
             {"users": 1, "jobs": 1, "matches": 1, "failed_users": 1},
+        )
+
+    def test_rejects_profile_with_empty_matching_facts_before_ranking(self) -> None:
+        invalid = json.loads(json.dumps(PROFILE))
+        invalid["matching_facts"] = {}
+        client = Mock(spec=SupabaseRestClient)
+        client.request.side_effect = [
+            [{"user_id": "invalid-user", "document": invalid}],
+            [live_job()],
+        ]
+
+        self.assertEqual(
+            match_all_users(client),
+            {"users": 0, "jobs": 1, "matches": 0, "failed_users": 1},
         )
 
 

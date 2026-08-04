@@ -47,7 +47,7 @@ class MatcherTest(unittest.TestCase):
         result = matcher.match(job)
         self.assertTrue(result.excluded)
         self.assertIn(
-            "Vaga hibrida fora de Belo Horizonte e regiao.",
+            "Vaga hibrida fora das localidades aceitas pelo perfil.",
             result.exclusion_reasons,
         )
 
@@ -66,6 +66,31 @@ class MatcherTest(unittest.TestCase):
         }
         result = matcher.match(job)
         self.assertFalse(result.excluded)
+
+    def test_onsite_job_in_accepted_location_is_accepted_when_requested(self) -> None:
+        profile = deepcopy(self.profile)
+        profile["work_preferences"]["desired_work_models"].append("onsite")
+        matcher = Matcher(profile, self.config)
+        job = deepcopy(self.jobs_document["jobs"][0])
+        job["location"] = {
+            "display": "Belo Horizonte, MG",
+            "remote": False,
+            "work_model": "onsite",
+            "city": "Belo Horizonte",
+            "eligible_regions": ["BR"],
+        }
+        self.assertFalse(matcher.match(job).excluded)
+
+    def test_secondary_skill_does_not_count_as_required_coverage(self) -> None:
+        profile = deepcopy(self.profile)
+        profile["skills_known"]["secondary_or_limited_evidence"] = ["Ruby"]
+        matcher = Matcher(profile, self.config)
+        job = deepcopy(self.jobs_document["jobs"][0])
+        job["required_skills"] = ["Ruby"]
+        job["preferred_skills"] = []
+        result = matcher.match(job)
+        full_score = self.config["component_weights"]["required_skill_coverage"]
+        self.assertLess(result.component_scores["required_skill_coverage"], full_score)
 
     def test_pending_profile_facts_leave_filters_disabled(self) -> None:
         matcher = Matcher(self.profile, self.config)

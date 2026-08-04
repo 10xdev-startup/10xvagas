@@ -1,5 +1,5 @@
 import { describe, expect, it } from '@jest/globals'
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { JobRadar } from '@/components/JobRadar'
 import type { RadarJob, SourceStatus } from '@/types/job'
 
@@ -9,6 +9,11 @@ const toggleSaved = jest.fn(() => true)
 jest.mock('../lib/savedJobsStore', () => ({
   useSavedJobs: () => ({ jobs: [], isSaved: () => false, save: jest.fn(), remove: jest.fn(), toggle: toggleSaved }),
 }))
+jest.mock('../services/jobService', () => ({ jobService: { getById: jest.fn() } }))
+
+const getByIdMock = (jest.requireMock('../services/jobService') as {
+  jobService: { getById: ReturnType<typeof jest.fn> }
+}).jobService.getById
 
 const jobs: RadarJob[] = [
   {
@@ -65,6 +70,14 @@ const sources: SourceStatus[] = [
 ]
 
 describe('JobRadar', () => {
+  it('busca a descrição completa apenas ao abrir o dossiê', async () => {
+    getByIdMock.mockResolvedValue({ ...jobs[0], description: 'Descrição carregada sob demanda.' })
+    render(<JobRadar brazilCount={1} internationalCount={0} jobs={[{ ...jobs[0], description: '' }]} />)
+
+    await waitFor(() => expect(getByIdMock).toHaveBeenCalledWith(jobs[0]?.publicId))
+    expect(await screen.findByText('Descrição carregada sob demanda.')).toBeInTheDocument()
+  })
+
   it('troca mercado e dossie sem sair da pagina', () => {
     render(<JobRadar brazilCount={1} internationalCount={1} jobs={jobs} sources={sources} />)
 
