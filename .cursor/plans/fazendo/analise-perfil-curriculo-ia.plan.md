@@ -52,9 +52,10 @@ Decisoes registradas antes do codigo:
 9. **Execucao:** worker Python separado, com `--once` para testes e loop com heartbeat
    para runtime. O deploy do engine e uma fase separada para nao quebrar os Web Apps
    atuais antes de existir `web-engine-10xvagas`.
-10. **Banco:** nao criar migration SQL. DDL idempotente pela Management API. O token
-    local disponivel nao tem acesso ao projeto (403); ate a credencial correta existir,
-    manter o SQL fora do repo e validar o codigo com mocks/contratos.
+10. **Banco:** nao criar migration SQL. O DDL idempotente foi aplicado pelo SQL Editor
+    em 2026-08-03 e permaneceu fora do repo. A introspeccao REST confirmou as tres
+    tabelas, as tres RPCs e o bucket privado; claims concorrentes de job e usage
+    entregaram o registro sentinela para exatamente um entre dois workers.
 
 ---
 
@@ -97,6 +98,14 @@ idempotente sem acoplar Node e Python por HTTP.
 
 **Validacao parcial:** introspeccao confirma tabelas, indices, RLS, policies, funcoes e
 bucket privado; duas claims concorrentes devolvem o mesmo job para apenas um worker.
+
+**Executado em 2026-08-03:** bucket privado com limite de 8 MiB e allowlist de MIME;
+`profile_analysis_job`, `profile_analysis` e `ai_usage_event` expostas no schema REST;
+RPCs `claim_profile_analysis_job`, `claim_ai_usage_event` e
+`approve_profile_analysis` disponiveis somente ao service role. Dois requests
+concorrentes resultaram em uma unica claim nas duas filas, e o cleanup deixou zero
+registros sentinela. O smoke da aprovacao bloqueou um `user_id` incorreto e confirmou
+que somente a chamada do dono atualiza `profile.document` e `approved_at`.
 
 **Commit sugerido:** `feat(perfil): definir contratos da analise assincrona`
 
@@ -254,6 +263,13 @@ insuficiencia de saldo, diff, aprovacao e perfil ativo durante processamento.
 **Validacao parcial:** E2E local completo e consultas read-only de jobs, usage, meters e
 Customer Balance confirmam o contrato.
 
+**Executado sem consumo em 2026-08-03:** backend respondeu `ready` em
+`localhost:3001`; frontend respondeu a landing em `localhost:3000` e protegeu
+`/profile` sem sessao com redirect para a LP; o engine `--once` conectou ao Supabase,
+encontrou a fila vazia e encerrou sem chamar o LLM. O E2E pago com curriculo real e a
+liquidacao live continuam bloqueados de proposito ate existir um Customer de teste com
+credito controlado.
+
 **Commit sugerido:** `test(perfil): validar fluxo assincrono e recuperacao`
 
 ---
@@ -271,6 +287,11 @@ Customer Balance confirmam o contrato.
 
 **Validacao parcial:** job criado em producao e reclamado pelo engine, sem processo Python
 dentro do backend Node.
+
+**Provisionado em 2026-08-03:** `web-engine-10xvagas` foi criado no App Service Plan B1
+existente, com `Always On`, `/health`, porta 8000 e variaveis runtime configuradas sem
+expor valores. O recurso permanece parado ate o merge; o workflow passa a construir,
+publicar, configurar e reiniciar a imagem `10xvagas-engine` junto dos demais servicos.
 
 **Commit sugerido:** `ci(engine): implantar worker de analise na Azure`
 

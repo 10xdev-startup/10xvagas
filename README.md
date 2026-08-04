@@ -146,8 +146,9 @@ Protocolo completo: [`engine/experiment/README.md`](engine/experiment/README.md)
 ## Deploy
 
 O workflow Azure em [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) publica
-frontend e backend. O engine possui imagem propria em [`engine/Dockerfile`](engine/Dockerfile)
-com `poppler-utils` para PDF e health check HTTP; seu runtime deve ser um container dedicado.
+frontend, backend e o engine. O worker usa a imagem de [`engine/Dockerfile`](engine/Dockerfile)
+com `poppler-utils`, usuario nao-root e health check HTTP no Web App dedicado
+`web-engine-10xvagas`.
 
 Variaveis adicionais desta feature:
 
