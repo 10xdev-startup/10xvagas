@@ -1,5 +1,5 @@
 import { supabase } from '@/database/supabase'
-import type { JobListRow, JobMatchRow, JobRow, RadarJob, ResolveJobIdResult, SourceRunRow, SourceStatus } from '@/types/job'
+import type { JobListRow, JobListRpcResult, JobMatchRow, JobRow, RadarJob, ResolveJobIdResult, SourceRunRow, SourceStatus } from '@/types/job'
 import { rowToRadarJob, sourceRunsToStatuses } from '@/types/job'
 import { extractSlugPrefix, slugPrefixToUUIDRange } from '@/utils/slugify'
 
@@ -11,6 +11,76 @@ const LIST_COLUMNS = 'id, external_id, source, source_label, title, company, sou
 const MATCH_COLUMNS = 'user_id, job_id, score, rank, excluded, reasons, gaps, skills, matched_at, updated_at'
 const SOURCE_RUN_COLUMNS = 'source_id, source_label, mode, status, job_count, error_message, collected_at'
 
+function rpcRowToRadarJob(row: JobListRpcResult['jobs'][number]): RadarJob {
+  const match: JobMatchRow | null = row.match_id
+    ? {
+        excluded: false,
+        gaps: row.gaps ?? [],
+        job_id: row.id,
+        matched_at: row.matched_at ?? row.updated_at,
+        rank: row.rank,
+        reasons: row.reasons ?? [],
+        score: row.score,
+        skills: row.skills ?? [],
+        updated_at: row.updated_at,
+        user_id: '',
+      }
+    : null
+  return rowToRadarJob(row, match)
+}
+
+function isMissingListRpc(error: { code?: string; message: string }): boolean {
+  return error.code === 'PGRST202' || error.message.includes('list_jobs_for_user')
+}
+
+async function listByUserFallback(userId: string, options: { limit: number; offset: number }): Promise<{
+  collectedAt: string | null
+  jobs: RadarJob[]
+  total: number
+}> {
+  const pageSize = 1000
+  const rows: JobListRow[] = []
+  const matches: JobMatchRow[] = []
+  for (let offset = 0; ; offset += pageSize) {
+    const { data, error } = await supabase
+      .from(TABLE)
+      .select(LIST_COLUMNS)
+      .eq('is_active', true)
+      .order('last_seen_at', { ascending: false })
+      .range(offset, offset + pageSize - 1)
+    if (error) throw new Error(error.message)
+    const page = (data as JobListRow[] | null) ?? []
+    rows.push(...page)
+    if (page.length < pageSize) break
+  }
+  for (let offset = 0; ; offset += pageSize) {
+    const { data, error } = await supabase
+      .from(MATCH_TABLE)
+      .select(MATCH_COLUMNS)
+      .eq('user_id', userId)
+      .range(offset, offset + pageSize - 1)
+    if (error) throw new Error(error.message)
+    const page = (data as JobMatchRow[] | null) ?? []
+    matches.push(...page)
+    if (page.length < pageSize) break
+  }
+  const matchesByJobId = new Map(matches.map((match) => [match.job_id, match]))
+  const ordered = rows
+    .filter((row) => !matchesByJobId.get(row.id)?.excluded)
+    .map((row) => rowToRadarJob(row, matchesByJobId.get(row.id) ?? null))
+    .sort((first, second) => {
+      if (first.rank !== null && second.rank !== null) return first.rank - second.rank
+      if (first.rank !== null) return -1
+      if (second.rank !== null) return 1
+      return 0
+    })
+  return {
+    collectedAt: rows.map((row) => row.last_seen_at).sort().at(-1) ?? null,
+    jobs: ordered.slice(options.offset, options.offset + options.limit),
+    total: ordered.length,
+  }
+}
+
 /** Acesso ao catalogo global e aos matches privados. Toda query de match inclui `user_id`. */
 export const JobModel = {
   async listByUser(userId: string, options: { limit: number; offset: number }): Promise<{
@@ -20,41 +90,39 @@ export const JobModel = {
     total: number
   }> {
     const [jobsResult, sourcesResult] = await Promise.all([
-      supabase
-        .from(TABLE)
-        .select(LIST_COLUMNS, { count: 'exact' })
-        .eq('is_active', true)
-        .order('last_seen_at', { ascending: false })
-        .range(options.offset, options.offset + options.limit - 1),
+      supabase.rpc('list_jobs_for_user', {
+        p_limit: options.limit,
+        p_offset: options.offset,
+        p_user_id: userId,
+      }),
       supabase.from(SOURCE_RUN_TABLE).select(SOURCE_RUN_COLUMNS).order('collected_at', { ascending: false }).limit(100),
     ])
     const { data: jobsData, error: jobsError } = jobsResult
     const { data: sourcesData, error: sourcesError } = sourcesResult
-    if (jobsError) throw new Error(jobsError.message)
     if (sourcesError) throw new Error(sourcesError.message)
 
-    const rows = (jobsData as JobListRow[] | null) ?? []
-    const jobIds = rows.map((row) => row.id)
-    const matchesResult = jobIds.length > 0
-      ? await supabase.from(MATCH_TABLE).select(MATCH_COLUMNS).eq('user_id', userId).in('job_id', jobIds)
-      : { data: [], error: null }
-    const { data: matchesData, error: matchesError } = matchesResult
-    if (matchesError) throw new Error(matchesError.message)
-    const matches = (matchesData as JobMatchRow[] | null) ?? []
+    let jobs: RadarJob[]
+    let total: number
+    let jobsCollectedAt: string | null
+    if (jobsError) {
+      if (!isMissingListRpc(jobsError)) throw new Error(jobsError.message)
+      console.warn('[JobModel] RPC list_jobs_for_user ausente; usando fallback paginado')
+      const fallback = await listByUserFallback(userId, options)
+      jobs = fallback.jobs
+      total = fallback.total
+      jobsCollectedAt = fallback.collectedAt
+    } else {
+      const result = (jobsData as JobListRpcResult | null) ?? { jobs: [], total: 0 }
+      jobs = result.jobs.map(rpcRowToRadarJob)
+      total = result.total
+      jobsCollectedAt = result.jobs.map((row) => row.last_seen_at).sort().at(-1) ?? null
+    }
     const sourceRuns = (sourcesData as SourceRunRow[] | null) ?? []
-    const matchesByJobId = new Map(matches.map((match) => [match.job_id, match]))
-
-    const jobs = rows
-      .filter((row) => !matchesByJobId.get(row.id)?.excluded)
-      .map((row) => rowToRadarJob(row, matchesByJobId.get(row.id) ?? null))
-      .sort((first, second) => {
-        if (first.rank !== null && second.rank !== null) return first.rank - second.rank
-        if (first.rank !== null) return -1
-        if (second.rank !== null) return 1
-        return 0
-      })
-    const collectedAt = rows.map((row) => row.last_seen_at).sort().at(-1) ?? null
-    return { jobs, collectedAt, sources: sourceRunsToStatuses(sourceRuns), total: jobsResult.count ?? rows.length }
+    const sources = sourceRunsToStatuses(sourceRuns)
+    const collectedAt = sources.map((source) => source.lastRunAt).filter((value): value is string => value !== null).sort().at(-1)
+      ?? jobsCollectedAt
+      ?? null
+    return { jobs, collectedAt, sources, total }
   },
 
   async findByIdForUser(userId: string, id: string): Promise<RadarJob | null> {
