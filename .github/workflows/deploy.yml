@@ -118,6 +118,10 @@ jobs:
               STRIPE_WEBHOOK_SECRET=${{ secrets.STRIPE_WEBHOOK_SECRET }} \
               STRIPE_CHECKOUT_ENABLED=${{ vars.STRIPE_CHECKOUT_ENABLED || 'false' }} \
               STRIPE_CREDITS_PACK_LOOKUP_KEYS=10xvagas_credits_brl_10,10xvagas_credits_brl_25,10xvagas_credits_brl_50,10xvagas_credits_brl_100 \
+              STRIPE_RATE_CARD_ID=${{ vars.STRIPE_RATE_CARD_ID }} \
+              STRIPE_LLM_GATEWAY_URL=https://llm.stripe.com \
+              PROFILE_ANALYSIS_MODEL_ID=gpt-5.6-terra \
+              AI_USAGE_SETTLEMENT_ENABLED=${{ vars.AI_USAGE_SETTLEMENT_ENABLED || 'false' }} \
               FRONTEND_URL=${{ secrets.FRONTEND_URL || format('https://{0}.azurewebsites.net', env.FRONTEND_APP) }} \
               CORS_ORIGINS=${{ secrets.CORS_ORIGINS || format('https://{0}.azurewebsites.net', env.FRONTEND_APP) }} \
               WEBSITES_PORT=3001
