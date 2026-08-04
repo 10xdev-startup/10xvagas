@@ -35,7 +35,7 @@ Fechar os nove riscos encontrados no review da branch de análise de currículo 
 - [x] Respostas pendentes atualizam o Perfil Canônico.
 - [x] Secundárias não pontuam e presencial funciona em local aceito.
 - [x] Coletor encerra ausentes por fonte e preserva fontes com falha.
-- [ ] Aplicar `is_active`/`closed_at` e índice parcial no Supabase.
+- [x] Aplicar `is_active`/`closed_at` e índice parcial no Supabase.
 - [x] Listagem é paginada, ativa e sem descrições completas.
 - [x] Retry Stripe respeita backoff por lease.
 - [x] Customer e meter settlement continuam idempotentes.
