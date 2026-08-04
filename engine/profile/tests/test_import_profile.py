@@ -3,6 +3,7 @@ from __future__ import annotations
 import copy
 import tempfile
 import unittest
+import zipfile
 from pathlib import Path
 from unittest.mock import patch
 
@@ -60,8 +61,9 @@ class ProfileImportTests(unittest.TestCase):
         self.assertIn("network configuration", excluded)
         self.assertIn("VPN configuration", excluded)
         evidenced = draft["skills_known"]["desired_and_evidenced"]
-        self.assertIn("Python", evidenced)
-        self.assertIn("FastAPI", evidenced)
+        secondary = draft["skills_known"]["secondary_or_limited_evidence"]
+        self.assertIn("Python", secondary)
+        self.assertIn("FastAPI", secondary)
         self.assertNotIn("technical support", evidenced)
 
     def test_explicit_desired_skill_updates_priority(self) -> None:
@@ -142,6 +144,20 @@ class ProfileImportTests(unittest.TestCase):
         self.assertEqual(len(documents), 2)
         self.assertEqual(documents[0].content, "TypeScript")
         self.assertEqual(documents[1].name, "<inline-text-1>")
+
+    def test_docx_is_parsed_without_external_sdk(self) -> None:
+        document_xml = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+        <w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+          <w:body><w:p><w:r><w:t>Backend Engineer</w:t></w:r></w:p></w:body>
+        </w:document>"""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            path = Path(temp_dir) / "cv.docx"
+            with zipfile.ZipFile(path, "w") as archive:
+                archive.writestr("word/document.xml", document_xml)
+
+            parsed = read_document(path)
+
+        self.assertEqual(parsed.content, "Backend Engineer")
 
     @patch("engine.profile.import_profile.shutil.which", return_value=None)
     def test_pdf_without_pdftotext_has_actionable_error(self, _which) -> None:
