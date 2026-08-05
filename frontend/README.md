@@ -30,4 +30,18 @@ artefatos do engine nem leva o diretorio `engine/` em sua imagem Docker.
 
 ## Login local
 
-Use `frontend/.env.example` como referencia, habilite Google no Supabase e cadastre `http://localhost:3000/auth/callback` como redirect permitido. A API Express deve usar o mesmo projeto Supabase para conseguir validar o JWT enviado pelo `apiClient`.
+Use `frontend/.env.example` como referencia. A API Express deve usar o mesmo projeto Supabase para conseguir validar o JWT enviado pelo `apiClient`.
+
+### Google OAuth
+
+O projeto hospedado usado no desenvolvimento e `bqlkonzhvmjccpizimnz`. Configure o login em duas etapas:
+
+1. No Google Auth Platform, crie um cliente OAuth do tipo **Aplicativo da Web**.
+   - Origens JavaScript: `http://localhost:3000` e a origem publica do frontend.
+   - URI de redirecionamento: `https://bqlkonzhvmjccpizimnz.supabase.co/auth/v1/callback`.
+2. No Supabase, abra **Authentication > Sign In / Providers > Google**, habilite o provider e salve o Client ID e o Client Secret gerados pelo Google.
+3. Em **Authentication > URL Configuration**, configure:
+   - Site URL de producao: a origem publica do frontend.
+   - Redirect URLs: `http://localhost:3000/auth/callback` e `<origem-publica>/auth/callback`.
+
+O callback cadastrado no Google pertence ao Supabase. O callback `/auth/callback` pertence ao frontend e deve ser cadastrado somente na allowlist de redirects do Supabase.

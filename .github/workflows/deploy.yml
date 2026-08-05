@@ -93,6 +93,7 @@ jobs:
             --build-arg NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }} \
             --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }} \
             --build-arg NEXT_PUBLIC_API_URL=${{ env.BACKEND_PUBLIC_URL }} \
+            --build-arg NEXT_PUBLIC_APP_URL=${{ secrets.FRONTEND_URL || format('https://{0}.azurewebsites.net', env.FRONTEND_APP) }} \
             -t ${{ env.ACR_NAME }}.azurecr.io/${{ env.FRONTEND_IMAGE }}:latest \
             -f frontend/Dockerfile .
           docker push ${{ env.ACR_NAME }}.azurecr.io/${{ env.FRONTEND_IMAGE }}:latest
@@ -145,6 +146,7 @@ jobs:
             --name ${{ env.FRONTEND_APP }} \
             --resource-group ${{ env.RESOURCE_GROUP }} \
             --settings \
+              NEXT_PUBLIC_APP_URL=${{ secrets.FRONTEND_URL || format('https://{0}.azurewebsites.net', env.FRONTEND_APP) }} \
               WEBSITES_PORT=8080
           az webapp config appsettings set \
             --name ${{ env.ENGINE_APP }} \
