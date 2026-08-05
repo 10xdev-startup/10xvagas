@@ -9,6 +9,7 @@ export interface UserRow {
   avatar_url: string | null
   role: UserRole
   status: string
+  stripe_customer_id: string | null
   onboarded_at: string | null
   created_at: string
   updated_at: string

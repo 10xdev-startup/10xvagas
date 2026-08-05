@@ -1,6 +1,7 @@
 import type { Request, Response, NextFunction } from 'express'
 import { supabase } from '@/database/supabase'
 import { UserModel } from '@/models/UserModel'
+import { BillingCustomerService } from '@/services/billingCustomerService'
 import { sendError } from '@/utils/apiResponse'
 import type { AuthUser } from '@/types/user'
 
@@ -59,6 +60,21 @@ export async function supabaseMiddleware(
   if (row.status !== 'active') {
     sendError(res, 403, 'Conta desativada. Contate um administrador.', 'ACCOUNT_DISABLED')
     return
+  }
+
+  // Assim como na 10xDev, o billing e provisionado no primeiro acesso
+  // autenticado. A idempotency key do Customer usa o user_id e impede que
+  // requests concorrentes criem Customers duplicados. Falha da Stripe nao
+  // bloqueia login; a proxima request tenta novamente enquanto o vinculo for null.
+  if (!row.stripe_customer_id) {
+    try {
+      await BillingCustomerService.getOrCreate(row.id, row.email)
+    } catch (billingError) {
+      console.error('[supabaseMiddleware] falha ao provisionar Customer Stripe', {
+        message: billingError instanceof Error ? billingError.message : 'erro desconhecido',
+        userId: row.id,
+      })
+    }
   }
 
   req.user = {
