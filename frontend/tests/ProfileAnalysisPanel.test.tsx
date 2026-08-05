@@ -15,6 +15,7 @@ jest.mock('../services/profileAnalysisService', () => ({
     create: jest.fn(),
     get: jest.fn(),
     list: jest.fn(),
+    models: jest.fn(),
     retry: jest.fn(),
   },
 }))
@@ -31,7 +32,7 @@ function job(status: ProfileAnalysisJob['status'] = 'queued'): ProfileAnalysisJo
     errorMessage: null,
     finishedAt: null,
     id: 'job-1',
-    modelId: 'gpt-5.6-terra',
+    modelId: 'gpt-5.6-sol',
     preferences: { desiredSkills: [], focus: 'backend', language: 'pt', markets: 'both', targetRoles: [] },
     progress: 0,
     retryOfJobId: null,
@@ -45,6 +46,10 @@ describe('ProfileAnalysisPanel', () => {
   beforeEach(() => {
     jest.clearAllMocks()
     jest.mocked(profileAnalysisService.list).mockResolvedValue({ jobs: [] })
+    jest.mocked(profileAnalysisService.models).mockResolvedValue({
+      defaultModelId: 'gpt-5.6-sol',
+      models: [{ id: 'gpt-5.6-sol', label: 'GPT-5.6 Sol', provider: 'openai' }],
+    })
   })
 
   it('mantem upload bloqueado e orienta recarga quando nao ha saldo', async () => {
@@ -71,6 +76,7 @@ describe('ProfileAnalysisPanel', () => {
     await waitFor(() => expect(profileAnalysisService.create).toHaveBeenCalledWith(
       document,
       expect.objectContaining({ focus: 'full_stack', language: 'pt', markets: 'both' }),
+      'gpt-5.6-sol',
     ))
     expect(await screen.findByText('Na fila')).toBeInTheDocument()
   })

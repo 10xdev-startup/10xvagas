@@ -84,7 +84,7 @@ class ProfileAnalysisWorkerTests(unittest.TestCase):
         gateway = Mock()
         worker = ProfileAnalysisWorker(client, gateway, worker_id="test-worker")
 
-        worker.process({"id": "job-1"})
+        worker.process({"id": "job-1", "model_id": "gpt-5.6-sol", "user_id": "user-1"})
 
         gateway.call_structured.assert_not_called()
         self.assertTrue(any(patch.get("status") == "cancelled" for _, patch in client.patches))
@@ -95,6 +95,7 @@ class ProfileAnalysisWorkerTests(unittest.TestCase):
         worker = ProfileAnalysisWorker(client, gateway, worker_id="test-worker")
         job = {
             "id": "job-1",
+            "model_id": "gpt-5.6-sol",
             "stripe_customer_id": "cus_vagas",
             "user_id": "user-1",
         }
@@ -111,9 +112,9 @@ class ProfileAnalysisWorkerTests(unittest.TestCase):
         client = FakeClient()
         worker = ProfileAnalysisWorker(client, Mock(), worker_id="test-worker")
         response = Mock()
-        response.api_model = "openai/gpt-5.6-terra"
+        response.api_model = "openai/gpt-5.6-sol"
         response.finish_reason = "stop"
-        response.model = "gpt-5.6-terra"
+        response.model = "gpt-5.6-sol"
         response.response_id = "response-1"
         response.usage = Mock(input_tokens=100, output_tokens=30, cached_tokens=40)
 

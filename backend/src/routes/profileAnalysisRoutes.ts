@@ -23,6 +23,7 @@ router.post('/', profileAnalysisRateLimit, (req, res, next) => {
   })
 }, ProfileAnalysisController.create)
 router.get('/', ProfileAnalysisController.list)
+router.get('/models', ProfileAnalysisController.models)
 router.get('/:id', ProfileAnalysisController.get)
 router.post('/:id/cancel', ProfileAnalysisController.cancel)
 router.post('/:id/retry', ProfileAnalysisController.retry)

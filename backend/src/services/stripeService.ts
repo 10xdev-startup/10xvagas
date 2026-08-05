@@ -40,10 +40,28 @@ interface StripeRateResponse {
   }
 }
 
-interface TokenRate {
+export interface TokenRate {
   model: string
   tokenType: TokenType
   unitAmountCents: number
+}
+
+export interface StripeGatewayModel {
+  apiModel: string
+  model: string
+  provider: string
+}
+
+interface StripeGatewayModelResponse {
+  author?: string
+  id?: string
+  model?: string
+  owned_by?: string
+  stripe_ai_gateway_support?: boolean
+}
+
+interface StripeRateCardResponse {
+  metadata?: Record<string, string>
 }
 
 let client: Stripe | null = null
@@ -77,6 +95,17 @@ async function stripeV2Get<T>(pathname: string): Promise<T> {
   })
   const text = await response.text()
   if (!response.ok) throw new Error(`Stripe GET ${pathname} respondeu ${response.status}: ${text.slice(0, 300)}`)
+  return JSON.parse(text) as T
+}
+
+async function stripeGatewayGet<T>(pathname: string): Promise<T> {
+  const secretKey = process.env['STRIPE_SECRET_KEY']?.trim()
+  if (!secretKey) throw new AppError(503, 'Stripe nao configurada', 'STRIPE_NOT_CONFIGURED')
+  const response = await fetch(`https://llm.stripe.com${pathname}`, {
+    headers: { Authorization: `Bearer ${secretKey}` },
+  })
+  const text = await response.text()
+  if (!response.ok) throw new Error(`Stripe LLM GET ${pathname} respondeu ${response.status}: ${text.slice(0, 300)}`)
   return JSON.parse(text) as T
 }
 
@@ -127,6 +156,26 @@ export function isStripeCheckoutEnabled(): boolean {
 }
 
 export const StripeService = {
+  async getAiRateCard(): Promise<{ metadata: Record<string, string>; rates: TokenRate[] }> {
+    const rateCardId = process.env['STRIPE_RATE_CARD_ID']?.trim()
+    if (!rateCardId) throw new Error('RATE_CARD_NOT_CONFIGURED')
+    const [card, rates] = await Promise.all([
+      stripeV2Get<StripeRateCardResponse>(`/v2/billing/rate_cards/${rateCardId}`),
+      listTokenRates(),
+    ])
+    return { metadata: card.metadata ?? {}, rates }
+  },
+
+  async listGatewayModels(): Promise<StripeGatewayModel[]> {
+    const response = await stripeGatewayGet<{ data?: StripeGatewayModelResponse[] }>('/v1/models')
+    return (response.data ?? []).flatMap((item) => {
+      if (item.stripe_ai_gateway_support !== true || !item.id || !item.model) return []
+      const provider = item.author ?? item.owned_by ?? item.id.split('/', 1)[0]
+      if (!provider) return []
+      return [{ apiModel: item.id, model: item.model, provider }]
+    })
+  },
+
   async listPacks(): Promise<BillingPack[]> {
     const lookupKeys = getPackLookupKeys()
     const prices = await getStripe().prices.list({ active: true, lookup_keys: lookupKeys, limit: 10 })

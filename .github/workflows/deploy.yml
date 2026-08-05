@@ -131,7 +131,6 @@ jobs:
               STRIPE_CREDITS_PACK_LOOKUP_KEYS=10xvagas_credits_brl_10,10xvagas_credits_brl_25,10xvagas_credits_brl_50,10xvagas_credits_brl_100 \
               STRIPE_RATE_CARD_ID=${{ vars.STRIPE_RATE_CARD_ID }} \
               STRIPE_LLM_GATEWAY_URL=https://llm.stripe.com \
-              PROFILE_ANALYSIS_MODEL_ID=gpt-5.6-terra \
               PROFILE_ANALYSIS_MIN_CREDITS_CENTS=${{ vars.PROFILE_ANALYSIS_MIN_CREDITS_CENTS || '5' }} \
               PROFILE_ANALYSIS_RATE_LIMIT_MAX=${{ vars.PROFILE_ANALYSIS_RATE_LIMIT_MAX || '10' }} \
               CHECKOUT_RATE_LIMIT_MAX=${{ vars.CHECKOUT_RATE_LIMIT_MAX || '10' }} \
@@ -154,8 +153,8 @@ jobs:
               SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }} \
               SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }} \
               STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY }} \
+              STRIPE_RATE_CARD_ID=${{ vars.STRIPE_RATE_CARD_ID }} \
               STRIPE_LLM_GATEWAY_URL=https://llm.stripe.com \
-              PROFILE_ANALYSIS_MODEL_ID=gpt-5.6-terra \
               WEBSITES_PORT=8000
 
       - name: Restart Azure Web Apps

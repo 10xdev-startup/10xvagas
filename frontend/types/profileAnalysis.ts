@@ -1,4 +1,11 @@
 export type ProfileAnalysisStatus = 'queued' | 'running' | 'cancel_requested' | 'cancelled' | 'succeeded' | 'failed'
+export type ProfileAnalysisEventType = 'cancelled' | 'completed' | 'failed' | 'stage' | 'tool_call' | 'tool_result'
+
+export interface ProfileAnalysisModelOption {
+  id: string
+  label: string
+  provider: 'anthropic' | 'google' | 'openai'
+}
 
 export interface ProfileAnalysisPreferences {
   desiredSkills: Array<{ name: string; priority: 1 | 2 | 3 }>
@@ -42,7 +49,19 @@ export interface ProfileAnalysis {
   updatedAt: string
 }
 
+export interface ProfileAnalysisEvent {
+  id: number
+  eventKey: string
+  eventType: ProfileAnalysisEventType
+  stage: string
+  message: string
+  progress: number
+  metadata: Record<string, unknown>
+  createdAt: string
+}
+
 export interface ProfileAnalysisDetail {
   analysis: ProfileAnalysis | null
+  events: ProfileAnalysisEvent[]
   job: ProfileAnalysisJob
 }

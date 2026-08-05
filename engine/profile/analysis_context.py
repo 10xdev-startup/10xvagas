@@ -84,7 +84,7 @@ REGRAS INEGOCIAVEIS
 - Evidencia usa resumo curto do trecho; nao reproduza dados pessoais desnecessarios.
 - O diagnostico deve apontar forcas, alegacoes fracas, metricas ausentes,
   contradicoes, riscos de ATS, clareza e recomendacoes priorizadas.
-- Responda exclusivamente chamando a tool `respond` no schema fornecido.
+- Responda exclusivamente chamando a tool `submit_profile_analysis` no schema fornecido.
 
 VERSAO DO PROMPT: {PROMPT_VERSION}
 

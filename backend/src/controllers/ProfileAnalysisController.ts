@@ -1,10 +1,17 @@
 import { randomUUID } from 'node:crypto'
 import type { Request, Response } from 'express'
-import { findAiModel, getDefaultProfileAnalysisModel } from '@/config/aiModelCatalog'
+import { findAiModel } from '@/config/aiModelCatalog'
+import { getDefaultProfileAnalysisModel } from '@/config/aiModelCatalog'
+import { getSelectableAiModels } from '@/config/aiModelCatalog'
 import { ProfileAnalysisModel } from '@/models/ProfileAnalysisModel'
 import { BillingCustomerService } from '@/services/billingCustomerService'
 import { ProfileDocumentService } from '@/services/profileDocumentService'
-import { PROFILE_ANALYSIS_FOCUSES, PROFILE_ANALYSIS_LANGUAGES, PROFILE_ANALYSIS_MARKETS, mapProfileAnalysis, mapProfileAnalysisJob } from '@/types/profileAnalysis'
+import { PROFILE_ANALYSIS_FOCUSES } from '@/types/profileAnalysis'
+import { PROFILE_ANALYSIS_LANGUAGES } from '@/types/profileAnalysis'
+import { PROFILE_ANALYSIS_MARKETS } from '@/types/profileAnalysis'
+import { mapProfileAnalysis } from '@/types/profileAnalysis'
+import { mapProfileAnalysisEvent } from '@/types/profileAnalysis'
+import { mapProfileAnalysisJob } from '@/types/profileAnalysis'
 import type { DesiredSkillInput, ProfileAnalysisPreferences } from '@/types/profileAnalysis'
 import { AppError } from '@/utils/AppError'
 import { sendOk } from '@/utils/apiResponse'
@@ -125,11 +132,29 @@ function validateProfileDraft(value: unknown): Record<string, unknown> {
 async function detailForUser(jobId: string, userId: string) {
   const job = await ProfileAnalysisModel.findJobByUser(jobId, userId)
   if (!job) throw new AppError(404, 'Analise nao encontrada', 'PROFILE_ANALYSIS_NOT_FOUND')
-  const analysis = await ProfileAnalysisModel.findAnalysisByJob(jobId, userId)
-  return { analysis: analysis ? mapProfileAnalysis(analysis) : null, job: mapProfileAnalysisJob(job) }
+  const [analysis, events] = await Promise.all([
+    ProfileAnalysisModel.findAnalysisByJob(jobId, userId),
+    ProfileAnalysisModel.listEventsByJob(jobId, userId),
+  ])
+  return {
+    analysis: analysis ? mapProfileAnalysis(analysis) : null,
+    events: events.map(mapProfileAnalysisEvent),
+    job: mapProfileAnalysisJob(job),
+  }
 }
 
 export const ProfileAnalysisController = {
+  async models(_req: Request, res: Response): Promise<void> {
+    const [defaultModel, models] = await Promise.all([
+      getDefaultProfileAnalysisModel(),
+      getSelectableAiModels(),
+    ])
+    sendOk(res, {
+      defaultModelId: defaultModel.id,
+      models: models.map(({ apiModel: _apiModel, ...model }) => model),
+    })
+  },
+
   async create(req: Request, res: Response): Promise<void> {
     const user = requireUser(req)
     if (!req.file) throw new AppError(422, 'Curriculo e obrigatorio', 'DOCUMENT_REQUIRED')
@@ -137,8 +162,8 @@ export const ProfileAnalysisController = {
     const requestedModel = (req.body as { modelId?: unknown } | undefined)?.modelId
     const modelId = typeof requestedModel === 'string' && requestedModel.trim()
       ? requestedModel.trim()
-      : getDefaultProfileAnalysisModel().id
-    if (!findAiModel(modelId)?.selectable) throw new AppError(422, 'Modelo indisponivel', 'INVALID_MODEL')
+      : (await getDefaultProfileAnalysisModel()).id
+    if (!await findAiModel(modelId)) throw new AppError(422, 'Modelo indisponivel', 'INVALID_MODEL')
 
     const active = await ProfileAnalysisModel.findActiveByUser(user.id)
     if (active) {
@@ -159,6 +184,7 @@ export const ProfileAnalysisController = {
         preferences,
         stripeCustomerId: billing.customer.id,
       })
+      console.info('[ProfileAnalysis] job criado', { jobId: job.id, modelId: job.model_id, status: job.status })
       sendOk(res, { job: mapProfileAnalysisJob(job) }, 202)
     } catch (error) {
       await ProfileDocumentService.remove(uploaded.documentPath)
@@ -190,6 +216,7 @@ export const ProfileAnalysisController = {
     }
     const job = await ProfileAnalysisModel.requestCancel(id, user.id, existing.status as 'queued' | 'running' | 'cancel_requested')
     if (!job) throw new AppError(409, 'Esta analise nao pode mais ser cancelada', 'PROFILE_ANALYSIS_TERMINAL')
+    console.info('[ProfileAnalysis] cancelamento solicitado', { jobId: id, status: job.status })
     sendOk(res, { job: mapProfileAnalysisJob(job) })
   },
 
@@ -200,6 +227,9 @@ export const ProfileAnalysisController = {
     if (!previous) throw new AppError(404, 'Analise nao encontrada', 'PROFILE_ANALYSIS_NOT_FOUND')
     if (!['failed', 'cancelled'].includes(previous.status)) {
       throw new AppError(409, 'Apenas analises falhas ou canceladas podem ser repetidas', 'PROFILE_ANALYSIS_NOT_RETRYABLE')
+    }
+    if (!await findAiModel(previous.model_id)) {
+      throw new AppError(422, 'O modelo desta analise nao esta mais no rate card', 'PROFILE_ANALYSIS_MODEL_RETIRED')
     }
     if (await ProfileAnalysisModel.findActiveByUser(user.id)) {
       throw new AppError(409, 'Ja existe uma analise em andamento', 'PROFILE_ANALYSIS_ACTIVE')
@@ -253,6 +283,7 @@ export const ProfileAnalysisController = {
     const document = validateProfileDraft(requested ?? detail.analysis.canonicalProfileDraft)
     await ProfileAnalysisModel.approve({ document, jobId: id, userId: user.id })
     await ProfileDocumentService.remove(storedJob.document_path)
+    console.info('[ProfileAnalysis] perfil aprovado', { jobId: id })
     sendOk(res, await detailForUser(id, user.id))
   },
 }
