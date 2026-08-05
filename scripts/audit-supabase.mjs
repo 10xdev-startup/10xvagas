@@ -16,6 +16,7 @@ const tableNames = [
   'source_run',
   'profile_analysis_job',
   'profile_analysis',
+  'profile_analysis_event',
   'ai_usage_event',
   'checkout_credit_grant',
 ]
@@ -109,6 +110,7 @@ async function anonymousRlsAudit(frontendUrl, projectRef) {
     'saved_job',
     'profile_analysis_job',
     'profile_analysis',
+    'profile_analysis_event',
     'ai_usage_event',
     'checkout_credit_grant',
   ]
@@ -131,10 +133,11 @@ const inventory = Object.fromEntries(await Promise.all(
 ))
 const rows = (table) => inventory[table].rows
 const userIds = new Set(rows('users').map((row) => row.id))
+const userById = new Map(rows('users').map((row) => [row.id, row]))
 const jobIds = new Set(rows('job').map((row) => row.id))
 const jobById = new Map(rows('job').map((row) => [row.id, row]))
 const analysisJobById = new Map(rows('profile_analysis_job').map((row) => [row.id, row]))
-const analysisIds = new Set(rows('profile_analysis').map((row) => row.id))
+const analysisById = new Map(rows('profile_analysis').map((row) => [row.id, row]))
 const now = Date.now()
 
 const { data: authPage, error: authError } = await supabase.auth.admin.listUsers({ page: 1, perPage: 1000 })
@@ -144,20 +147,40 @@ const authIds = new Set(authPage.users.map((user) => user.id))
 const ownershipIssues = []
 for (const analysis of rows('profile_analysis')) {
   const job = analysisJobById.get(analysis.job_id)
-  if (!job || job.user_id !== analysis.user_id) ownershipIssues.push(`profile_analysis:${analysis.id}`)
+  if (!job || job.user_id !== analysis.user_id || job.model_id !== analysis.model_id) {
+    ownershipIssues.push(`profile_analysis:${analysis.id}`)
+  }
+}
+for (const event of rows('profile_analysis_event')) {
+  const job = analysisJobById.get(event.job_id)
+  if (!job || job.user_id !== event.user_id) ownershipIssues.push(`profile_analysis_event:${event.id}`)
 }
 for (const usage of rows('ai_usage_event')) {
   const job = usage.job_id ? analysisJobById.get(usage.job_id) : null
-  if ((job && job.user_id !== usage.user_id) || (usage.analysis_id && !analysisIds.has(usage.analysis_id))) {
+  const analysis = usage.analysis_id ? analysisById.get(usage.analysis_id) : null
+  if (!job
+    || job.user_id !== usage.user_id
+    || job.model_id !== usage.requested_model
+    || (usage.analysis_id && (!analysis || analysis.job_id !== usage.job_id || analysis.user_id !== usage.user_id))) {
     ownershipIssues.push(`ai_usage_event:${usage.id}`)
   }
 }
 
 const activeJobs = rows('profile_analysis_job').filter((row) => ['queued', 'running', 'cancel_requested'].includes(row.status))
 const staleRunning = activeJobs.filter((row) => row.status !== 'queued' && row.lease_expires_at && Date.parse(row.lease_expires_at) < now)
-const malformedDocumentPaths = rows('profile_analysis_job').filter(
-  (row) => typeof row.document_path !== 'string' || !row.document_path.startsWith(`${row.user_id}/${row.id}/`),
-)
+function validDocumentPath(row) {
+  if (typeof row.document_path !== 'string' || !row.document_path.startsWith(`${row.user_id}/`)) return false
+  const documentJobId = row.document_path.split('/')[1]
+  let cursor = row
+  const visited = new Set()
+  while (cursor && !visited.has(cursor.id)) {
+    if (cursor.id === documentJobId) return true
+    visited.add(cursor.id)
+    cursor = cursor.retry_of_job_id ? analysisJobById.get(cursor.retry_of_job_id) : null
+  }
+  return false
+}
+const malformedDocumentPaths = rows('profile_analysis_job').filter((row) => !validDocumentPath(row))
 const terminalWithoutFinishedAt = rows('profile_analysis_job').filter(
   (row) => ['cancelled', 'succeeded', 'failed'].includes(row.status) && !row.finished_at,
 )
@@ -232,6 +255,11 @@ const report = {
     missingCoreFields: rows('job').filter((row) => !row.title || !row.company || !row.source_url || !row.location).length,
     source: countBy(rows('job'), 'source'),
     workplaceType: countBy(rows('job'), 'workplace_type'),
+    employmentType: countBy(rows('job'), 'employment_type'),
+    invalidTaxonomy: rows('job').filter((row) => (
+      !['remote', 'hybrid', 'onsite', 'unknown'].includes(row.workplace_type)
+      || (row.employment_type !== null && !['full_time', 'part_time', 'contract', 'temporary', 'internship', 'other'].includes(row.employment_type))
+    )).length,
   },
   uniqueness: {
     jobsByNaturalKey: duplicates(rows('job'), (row) => `${row.source}:${row.external_id}`).length,
@@ -246,6 +274,7 @@ const report = {
     savedJobsWithoutUser: rows('saved_job').filter((row) => !userIds.has(row.user_id)).length,
     analysisJobsWithoutUser: rows('profile_analysis_job').filter((row) => !userIds.has(row.user_id)).length,
     analysesWithoutJob: rows('profile_analysis').filter((row) => !analysisJobById.has(row.job_id)).length,
+    analysisEventsWithoutJob: rows('profile_analysis_event').filter((row) => !analysisJobById.has(row.job_id)).length,
     ownershipIssues: ownershipIssues.length,
   },
   jobs: {
@@ -264,8 +293,8 @@ const report = {
     scoreOutsideRange: rows('job_match').filter(
       (row) => row.score !== null && (!Number.isFinite(row.score) || row.score < 0 || row.score > 100),
     ).length,
-    unspecifiedWorkplaceIncluded: rows('job_match').filter(
-      (row) => !row.excluded && jobById.get(row.job_id)?.workplace_type === 'unspecified',
+    unknownWorkplaceIncluded: rows('job_match').filter(
+      (row) => !row.excluded && jobById.get(row.job_id)?.workplace_type === 'unknown',
     ).length,
   },
   usage: {
@@ -274,6 +303,17 @@ const report = {
       (row) => row.identifier,
     ).length,
     settlementStatus: countBy(rows('ai_usage_event'), 'settlement_status'),
+    tokenTotalMismatches: rows('ai_usage_event').filter((row) => (
+      row.cached_tokens > row.input_tokens || row.total_tokens !== row.input_tokens + row.output_tokens
+    )).length,
+    customerMismatches: rows('ai_usage_event').filter((row) => (
+      userById.get(row.user_id)?.stripe_customer_id !== row.stripe_customer_id
+    )).length,
+  },
+  billing: {
+    checkoutCustomerMismatches: rows('checkout_credit_grant').filter((row) => (
+      userById.get(row.user_id)?.stripe_customer_id !== row.customer_id
+    )).length,
   },
   storage: {
     allowedMimeTypes: profileBucket?.allowed_mime_types ?? null,

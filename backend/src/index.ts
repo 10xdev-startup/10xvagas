@@ -48,7 +48,18 @@ app.get('/health', (_req, res) => {
 })
 
 app.get('/ready', async (_req, res) => {
-  const [users, savedJobs, jobs, jobMatches, sourceRuns, analysisJobs, analyses, usageEvents] = await Promise.all([
+  const [
+    users,
+    savedJobs,
+    jobs,
+    jobMatches,
+    sourceRuns,
+    analysisJobs,
+    analyses,
+    analysisEvents,
+    usageEvents,
+    checkoutCreditGrants,
+  ] = await Promise.all([
     supabase.from('users').select('id', { count: 'exact', head: true }),
     supabase.from('saved_job').select('id', { count: 'exact', head: true }),
     supabase.from('job').select('id', { count: 'exact', head: true }),
@@ -56,10 +67,13 @@ app.get('/ready', async (_req, res) => {
     supabase.from('source_run').select('id', { count: 'exact', head: true }),
     supabase.from('profile_analysis_job').select('id', { count: 'exact', head: true }),
     supabase.from('profile_analysis').select('id', { count: 'exact', head: true }),
+    supabase.from('profile_analysis_event').select('id', { count: 'exact', head: true }),
     supabase.from('ai_usage_event').select('id', { count: 'exact', head: true }),
+    supabase.from('checkout_credit_grant').select('id', { count: 'exact', head: true }),
   ])
   if (users.error || savedJobs.error || jobs.error || jobMatches.error || sourceRuns.error
-    || analysisJobs.error || analyses.error || usageEvents.error) {
+    || analysisJobs.error || analyses.error || analysisEvents.error || usageEvents.error
+    || checkoutCreditGrants.error) {
     sendError(res, 503, 'Banco ainda nao esta pronto para trafego autenticado.', 'DATABASE_NOT_READY')
     return
   }

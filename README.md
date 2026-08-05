@@ -150,13 +150,32 @@ frontend, backend e o engine. O worker usa a imagem de [`engine/Dockerfile`](eng
 com `poppler-utils`, usuario nao-root e health check HTTP no Web App dedicado
 `web-engine-10xvagas`.
 
+O catalogo de modelos, o modelo padrao e os precos sao lidos diretamente do rate card
+ativo na Stripe. O card precisa declarar `default_profile_analysis_model` nos metadados
+e exatamente uma rate `input`, `output` e `cached` por modelo.
+
 Variaveis adicionais desta feature:
 
-- backend: `STRIPE_RATE_CARD_ID`, `PROFILE_ANALYSIS_MODEL_ID` e
-  `AI_USAGE_SETTLEMENT_ENABLED`;
-- engine: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `STRIPE_SECRET_KEY` e
-  `STRIPE_LLM_GATEWAY_URL`.
+- backend: `STRIPE_RATE_CARD_ID` e `AI_USAGE_SETTLEMENT_ENABLED`;
+- engine: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `STRIPE_SECRET_KEY`,
+  `STRIPE_RATE_CARD_ID` e `STRIPE_LLM_GATEWAY_URL`.
 
 `STRIPE_CHECKOUT_ENABLED` e `AI_USAGE_SETTLEMENT_ENABLED` foram liberadas depois do smoke
 live de usage, rate card, meter events, debito e retry idempotente. Em ambiente novo,
 comece com ambas em `false` e so as habilite depois de repetir essa validacao.
+
+## Auditoria do Supabase
+
+O script de auditoria valida isolamento por usuario, integridade entre jobs, analises,
+eventos e billing, taxonomia de vagas, documentos privados e exposicao anonima:
+
+```bash
+SUPABASE_URL=https://seu-projeto.supabase.co \
+SUPABASE_SERVICE_ROLE_KEY=sua-chave \
+node scripts/audit-supabase.mjs
+```
+
+Ele e somente leitura. A verificacao estrutural complementar deve confirmar RLS em todas
+as tabelas publicas, ausencia de grants para `anon`, grants minimos para `authenticated`
+e constraints validadas. DDL continua sendo aplicado pelo SQL Editor ou Management API,
+nunca por migration versionada neste repositorio.
