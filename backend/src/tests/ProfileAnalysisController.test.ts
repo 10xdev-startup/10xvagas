@@ -7,6 +7,24 @@ import { ProfileDocumentService } from '@/services/profileDocumentService'
 import type { ProfileAnalysisJobRow, ProfileAnalysisRow } from '@/types/profileAnalysis'
 import type { AuthUser } from '@/types/user'
 
+jest.mock('@/config/aiModelCatalog', () => ({
+  findAiModel: jest.fn(async (modelId: string) => modelId === 'gpt-5.6-sol'
+    ? { apiModel: 'openai/gpt-5.6-sol', id: modelId, label: 'GPT-5.6 Sol', provider: 'openai' }
+    : null),
+  getDefaultProfileAnalysisModel: jest.fn(async () => ({
+    apiModel: 'openai/gpt-5.6-sol',
+    id: 'gpt-5.6-sol',
+    label: 'GPT-5.6 Sol',
+    provider: 'openai',
+  })),
+  getSelectableAiModels: jest.fn(async () => [{
+    apiModel: 'openai/gpt-5.6-sol',
+    id: 'gpt-5.6-sol',
+    label: 'GPT-5.6 Sol',
+    provider: 'openai',
+  }]),
+}))
+
 jest.mock('@/models/ProfileAnalysisModel', () => ({
   ProfileAnalysisModel: {
     approve: jest.fn(),
@@ -15,6 +33,7 @@ jest.mock('@/models/ProfileAnalysisModel', () => ({
     findAnalysisByJob: jest.fn(),
     findJobByUser: jest.fn(),
     listJobsByUser: jest.fn(),
+    listEventsByJob: jest.fn(),
     requestCancel: jest.fn(),
   },
 }))
@@ -24,7 +43,7 @@ jest.mock('@/services/billingCustomerService', () => ({
 }))
 
 jest.mock('@/services/profileDocumentService', () => ({
-  ProfileDocumentService: { remove: jest.fn(), upload: jest.fn() },
+  ProfileDocumentService: { exists: jest.fn(), remove: jest.fn(), upload: jest.fn() },
 }))
 
 const user: AuthUser = {
@@ -60,7 +79,7 @@ function job(status: ProfileAnalysisJobRow['status'] = 'queued'): ProfileAnalysi
     heartbeat_at: null,
     id: 'job-1',
     lease_expires_at: null,
-    model_id: 'gpt-5.6-terra',
+    model_id: 'gpt-5.6-sol',
     preferences,
     progress: 0,
     retry_of_job_id: null,
@@ -97,7 +116,7 @@ function analysis(): ProfileAnalysisRow {
     cv_assessment: {},
     id: 'analysis-1',
     job_id: 'job-1',
-    model_id: 'gpt-5.6-terra',
+    model_id: 'gpt-5.6-sol',
     pending_questions: [],
     prompt_version: 'profile-analysis-v1',
     source_evidence: [],
@@ -113,7 +132,10 @@ function response(): { json: jest.Mock; res: Response; status: jest.Mock } {
 }
 
 describe('ProfileAnalysisController', () => {
-  beforeEach(() => { jest.clearAllMocks() })
+  beforeEach(() => {
+    jest.clearAllMocks()
+    jest.mocked(ProfileAnalysisModel.listEventsByJob).mockResolvedValue([])
+  })
 
   it('cria job com user_id apenas da sessao e responde no envelope', async () => {
     jest.mocked(ProfileAnalysisModel.findActiveByUser).mockResolvedValue(null)
@@ -138,6 +160,20 @@ describe('ProfileAnalysisController', () => {
     expect(result.json).toHaveBeenCalledWith(expect.objectContaining({ success: true }))
   })
 
+  it('lista somente modelos selecionaveis no envelope', async () => {
+    const result = response()
+
+    await ProfileAnalysisController.models({} as Request, result.res)
+
+    expect(result.json).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({
+        defaultModelId: 'gpt-5.6-sol',
+        models: [expect.objectContaining({ id: 'gpt-5.6-sol' })],
+      }),
+      success: true,
+    }))
+  })
+
   it('nao permite consultar job de outro usuario', async () => {
     jest.mocked(ProfileAnalysisModel.findJobByUser).mockResolvedValue(null)
     const result = response()
@@ -147,6 +183,18 @@ describe('ProfileAnalysisController', () => {
       result.res,
     )).rejects.toMatchObject({ code: 'PROFILE_ANALYSIS_NOT_FOUND', status: 404 })
     expect(ProfileAnalysisModel.findJobByUser).toHaveBeenCalledWith('job-other', 'user-1')
+  })
+
+  it('bloqueia retry quando o modelo saiu do rate card', async () => {
+    jest.mocked(ProfileAnalysisModel.findJobByUser).mockResolvedValue({
+      ...job('failed'),
+      model_id: 'retired-model',
+    })
+
+    await expect(ProfileAnalysisController.retry(
+      { params: { id: 'job-1' }, user } as unknown as Request,
+      response().res,
+    )).rejects.toMatchObject({ code: 'PROFILE_ANALYSIS_MODEL_RETIRED', status: 422 })
   })
 
   it('cancela job ainda na fila diretamente sem depender do worker', async () => {
@@ -175,6 +223,7 @@ describe('ProfileAnalysisController', () => {
     )
 
     expect(ProfileAnalysisModel.approve).toHaveBeenCalledWith(expect.objectContaining({ jobId: 'job-1', userId: 'user-1' }))
+    expect(ProfileDocumentService.remove).toHaveBeenCalledWith('user-1/job-1/document.txt')
     expect(result.json).toHaveBeenCalledWith(expect.objectContaining({ success: true }))
   })
 

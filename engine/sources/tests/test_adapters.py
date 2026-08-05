@@ -41,6 +41,7 @@ class AdapterContractTest(unittest.TestCase):
         job = AshbyAdapter().parse(payload, config("ashby", "ashby", "Ashby"), "Example")[0]
         self.assertEqual(job.description, "Build a TypeScript product.")
         self.assertEqual(job.workplace_type, "remote")
+        self.assertEqual(job.employment_type, "full_time")
         self.assertEqual(job.market, "brazil")
 
     def test_greenhouse_converts_description_html_to_text(self) -> None:
@@ -81,6 +82,7 @@ class AdapterContractTest(unittest.TestCase):
         job = LeverAdapter().parse(payload, config("lever", "lever", "Lever"), "Example")[0]
         self.assertIn("60000", job.salary_raw or "")
         self.assertEqual(job.description, "Own the product end to end.")
+        self.assertEqual(job.employment_type, "full_time")
 
     def test_remotive_converts_html_and_filters_location(self) -> None:
         payload = {
@@ -101,6 +103,7 @@ class AdapterContractTest(unittest.TestCase):
         job = RemotiveAdapter().parse(payload, config("remotive", "remotive", "Remotive"))[0]
         self.assertTrue(is_relevant(job))
         self.assertEqual(job.description, "Build APIs.")
+        self.assertEqual(job.employment_type, "full_time")
 
     def test_deduplication_uses_canonical_source_url(self) -> None:
         payload = {
@@ -139,6 +142,19 @@ class AdapterContractTest(unittest.TestCase):
         }
         job = RemotiveAdapter().parse(payload, config("remotive", "remotive", "Remotive"))[0]
         self.assertFalse(is_relevant(job))
+
+    def test_source_taxonomy_is_normalized_at_the_adapter_boundary(self) -> None:
+        payload = [{
+            "id": "job-1",
+            "text": "Backend Engineer",
+            "workplaceType": "On-site",
+            "categories": {"commitment": "Remote"},
+        }]
+
+        job = LeverAdapter().parse(payload, config("lever", "lever", "Lever"), "Example")[0]
+
+        self.assertEqual(job.workplace_type, "onsite")
+        self.assertIsNone(job.employment_type)
 
 
 if __name__ == "__main__":

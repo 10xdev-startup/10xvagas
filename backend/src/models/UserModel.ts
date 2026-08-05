@@ -3,7 +3,7 @@ import type { UserRole, UserRow } from '@/types/user'
 
 const TABLE = 'users'
 const COLUMNS =
-  'id, email, name, avatar_url, role, status, onboarded_at, created_at, updated_at'
+  'id, email, name, avatar_url, role, status, stripe_customer_id, onboarded_at, created_at, updated_at'
 
 export interface UpsertUserInput {
   id: string

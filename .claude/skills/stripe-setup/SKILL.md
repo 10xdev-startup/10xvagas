@@ -69,6 +69,17 @@ FRONTEND_URL=http://localhost:3000
 
 Nunca imprima `STRIPE_SECRET_KEY` ou `whsec_...`.
 
+### Isolamento também vale para arquivos `.env`
+
+Nunca execute `source` do `.env` de dois produtos no mesmo shell. O segundo arquivo pode
+sobrescrever `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, IDs de rate card e outras
+variáveis sem aviso, fazendo uma operação correta atingir o projeto errado.
+
+Quando precisar reutilizar apenas a chave compartilhada da Stripe, extraia somente
+`STRIPE_SECRET_KEY` do arquivo de origem e mantenha URL/ref/chaves do Supabase carregadas
+exclusivamente a partir da 10xVagas. Antes de qualquer write, imprima apenas identificadores
+não secretos do alvo (`project_ref`, Customer e `livemode`) e faça read-back depois.
+
 ## Ordem segura
 
 1. Confirme test/live e a conta.
@@ -171,6 +182,17 @@ create unique index if not exists users_stripe_customer_id_key
   on public.users (stripe_customer_id)
   where stripe_customer_id is not null;
 ```
+
+Um `stripe_customer_id` preenchido não prova que o vínculo está correto. Após o primeiro
+login, recupere o Customer na Stripe e confirme simultaneamente:
+
+- `metadata.product=10xvagas`;
+- `metadata.platform=10xvagas`;
+- `metadata.app_user_id` igual ao `public.users.id` vinculado;
+- e-mail esperado, `deleted=false` e `livemode` do ambiente alvo.
+
+Customer legado sem namespace deve ser tratado explicitamente; nunca tome posse de um
+Customer apenas porque o e-mail coincide, pois a conta Stripe é compartilhada.
 
 ## Checklist
 

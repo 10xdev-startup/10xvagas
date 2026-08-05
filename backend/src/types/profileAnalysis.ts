@@ -15,6 +15,7 @@ export type ProfileAnalysisStatus = typeof PROFILE_ANALYSIS_STATUSES[number]
 export type ProfileAnalysisFocus = typeof PROFILE_ANALYSIS_FOCUSES[number]
 export type ProfileAnalysisLanguage = typeof PROFILE_ANALYSIS_LANGUAGES[number]
 export type ProfileAnalysisMarket = typeof PROFILE_ANALYSIS_MARKETS[number]
+export type ProfileAnalysisEventType = 'cancelled' | 'completed' | 'failed' | 'stage' | 'tool_call' | 'tool_result'
 
 export interface DesiredSkillInput {
   name: string
@@ -71,6 +72,19 @@ export interface ProfileAnalysisRow {
   updated_at: string
 }
 
+export interface ProfileAnalysisEventRow {
+  id: number
+  user_id: string
+  job_id: string
+  event_key: string
+  event_type: ProfileAnalysisEventType
+  stage: string
+  message: string
+  progress: number
+  metadata: Record<string, unknown>
+  created_at: string
+}
+
 export interface ProfileAnalysisJob {
   id: string
   status: ProfileAnalysisStatus
@@ -105,8 +119,20 @@ export interface ProfileAnalysis {
   updatedAt: string
 }
 
+export interface ProfileAnalysisEvent {
+  id: number
+  eventKey: string
+  eventType: ProfileAnalysisEventType
+  stage: string
+  message: string
+  progress: number
+  metadata: Record<string, unknown>
+  createdAt: string
+}
+
 export interface ProfileAnalysisDetail {
   analysis: ProfileAnalysis | null
+  events: ProfileAnalysisEvent[]
   job: ProfileAnalysisJob
 }
 
@@ -145,5 +171,18 @@ export function mapProfileAnalysis(row: ProfileAnalysisRow): ProfileAnalysis {
     approvedAt: row.approved_at,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+  }
+}
+
+export function mapProfileAnalysisEvent(row: ProfileAnalysisEventRow): ProfileAnalysisEvent {
+  return {
+    id: row.id,
+    eventKey: row.event_key,
+    eventType: row.event_type,
+    stage: row.stage,
+    message: row.message,
+    progress: row.progress,
+    metadata: row.metadata,
+    createdAt: row.created_at,
   }
 }

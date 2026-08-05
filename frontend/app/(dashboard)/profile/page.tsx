@@ -1,9 +1,5 @@
-import { ProfileOnboarding } from '@/components/ProfileOnboarding'
-import { ProfileWorkbench } from '@/components/ProfileWorkbench'
-import { getCanonicalProfile } from '@/lib/profile'
+import { ProfilePageWorkspace } from '@/components/ProfilePageWorkspace'
 
-export default async function ProfilePage() {
-  const profile = await getCanonicalProfile()
-  if (!profile) return <ProfileOnboarding />
-  return <ProfileWorkbench profile={profile} />
+export default function ProfilePage() {
+  return <ProfilePageWorkspace />
 }

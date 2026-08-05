@@ -19,6 +19,7 @@ describe('BillingWorkspace', () => {
       checkoutEnabled: true,
       currency: 'BRL',
       hasCustomer: true,
+      minimumAnalysisCreditsCents: 5,
       packs: [
         { amountCents: 2500, currency: 'BRL', lookupKey: '10xvagas_credits_brl_25' },
       ],

@@ -10,11 +10,14 @@ import tempfile
 import time
 import uuid
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
+from engine.llm.catalog import get_model
 from engine.llm.catalog import get_selectable_model
-from engine.llm.stripe_gateway import StripeGatewayError, StripeLlmGateway
+from engine.llm.stripe_gateway import PROFILE_ANALYSIS_TOOL_NAME
+from engine.llm.stripe_gateway import StripeGatewayError
+from engine.llm.stripe_gateway import StripeLlmGateway
 from engine.profile.analysis_context import PROMPT_VERSION, apply_declared_preferences, build_profile_analysis_prompt, empty_canonical_profile
 from engine.profile.import_profile import ProfileImportError, SourceDocument, build_deterministic_draft, merge_profile_proposal, read_document
 from engine.supabase_rest import SupabaseRestClient, SupabaseRestError
@@ -25,25 +28,29 @@ LEASE_SECONDS = 300
 POLL_SECONDS = 2.0
 
 
-class _HealthHandler(BaseHTTPRequestHandler):
-    def do_GET(self) -> None:  # noqa: N802 - nome definido pela stdlib
-        if self.path not in {"/health", "/ready"}:
-            self.send_response(404)
+def _health_handler(readiness_check: Callable[[], bool]) -> type[BaseHTTPRequestHandler]:
+    class HealthHandler(BaseHTTPRequestHandler):
+        def do_GET(self) -> None:  # noqa: N802 - nome definido pela stdlib
+            if self.path not in {"/health", "/ready"}:
+                self.send_response(404)
+                self.end_headers()
+                return
+            ready = self.path == "/health" or readiness_check()
+            body = b'{"status":"ok"}' if ready else b'{"status":"not_ready"}'
+            self.send_response(200 if ready else 503)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(body)))
             self.end_headers()
+            self.wfile.write(body)
+
+        def log_message(self, _format: str, *_args: object) -> None:
             return
-        body = b'{"status":"ok"}'
-        self.send_response(200)
-        self.send_header("Content-Type", "application/json")
-        self.send_header("Content-Length", str(len(body)))
-        self.end_headers()
-        self.wfile.write(body)
 
-    def log_message(self, _format: str, *_args: object) -> None:
-        return
+    return HealthHandler
 
 
-def start_health_server(port: int) -> ThreadingHTTPServer:
-    server = ThreadingHTTPServer(("0.0.0.0", port), _HealthHandler)
+def start_health_server(port: int, readiness_check: Callable[[], bool]) -> ThreadingHTTPServer:
+    server = ThreadingHTTPServer(("0.0.0.0", port), _health_handler(readiness_check))
     threading.Thread(target=server.serve_forever, name="health-server", daemon=True).start()
     return server
 
@@ -111,17 +118,21 @@ class ProfileAnalysisWorker:
         client: SupabaseRestClient,
         gateway: StripeLlmGateway,
         *,
+        heartbeat_interval_seconds: float | None = None,
+        lease_seconds: int = LEASE_SECONDS,
         worker_id: str | None = None,
     ) -> None:
         self.client = client
         self.gateway = gateway
+        self.lease_seconds = lease_seconds
+        self.heartbeat_interval_seconds = heartbeat_interval_seconds or max(5.0, min(60.0, lease_seconds / 3))
         self.worker_id = worker_id or f"{socket.gethostname()}-{os.getpid()}"
         self.schema = json.loads(ANALYSIS_SCHEMA_PATH.read_text(encoding="utf-8"))
 
     def claim(self) -> dict[str, Any] | None:
         return _single_row(self.client.rpc(
             "claim_profile_analysis_job",
-            {"p_lease_seconds": LEASE_SECONDS, "p_worker_id": self.worker_id},
+            {"p_lease_seconds": self.lease_seconds, "p_worker_id": self.worker_id},
         ))
 
     def _patch_job(self, job_id: str, patch: dict[str, Any]) -> None:
@@ -136,9 +147,78 @@ class ProfileAnalysisWorker:
         self._patch_job(job_id, {
             "current_step": current_step,
             "heartbeat_at": now,
-            "lease_expires_at": _future_iso(LEASE_SECONDS),
+            "lease_expires_at": _future_iso(self.lease_seconds),
             "progress": progress,
         })
+
+    def _record_event(
+        self,
+        job: dict[str, Any],
+        *,
+        event_key: str,
+        event_type: str,
+        stage: str,
+        message: str,
+        progress: int,
+        metadata: dict[str, Any] | None = None,
+    ) -> None:
+        safe_metadata = metadata or {}
+        try:
+            self.client.request(
+                "profile_analysis_event?on_conflict=job_id,event_key",
+                method="POST",
+                prefer="resolution=merge-duplicates,return=minimal",
+                payload={
+                    "event_key": event_key,
+                    "event_type": event_type,
+                    "job_id": job["id"],
+                    "message": message,
+                    "metadata": safe_metadata,
+                    "progress": progress,
+                    "stage": stage,
+                    "user_id": job["user_id"],
+                },
+            )
+        except SupabaseRestError as error:
+            print(json.dumps({
+                "component": "profile-worker",
+                "event": "progress_event_write_failed",
+                "job_id": job.get("id"),
+                "stage": stage,
+                "error": type(error).__name__,
+            }, ensure_ascii=False))
+            return
+        print(json.dumps({
+            "component": "profile-worker",
+            "event": event_type,
+            "job_id": job["id"],
+            "message": message,
+            "progress": progress,
+            "stage": stage,
+            **safe_metadata,
+        }, ensure_ascii=False))
+
+    def _advance(
+        self,
+        job: dict[str, Any],
+        *,
+        event_key: str,
+        message: str,
+        progress: int,
+        stage: str,
+        event_type: str = "stage",
+        metadata: dict[str, Any] | None = None,
+    ) -> None:
+        self._heartbeat(str(job["id"]), progress, message)
+        self._record_event(
+            job,
+            event_key=event_key,
+            event_type=event_type,
+            stage=stage,
+            message=message,
+            progress=progress,
+            metadata=metadata,
+        )
 
     def _is_cancel_requested(self, job_id: str) -> bool:
         rows = self.client.request(
@@ -147,7 +227,8 @@ class ProfileAnalysisWorker:
         row = _single_row(rows)
         return bool(row and row.get("status") == "cancel_requested")
 
-    def _cancel(self, job_id: str) -> None:
+    def _cancel(self, job: dict[str, Any]) -> None:
+        job_id = str(job["id"])
         now = _now_iso()
         self._patch_job(job_id, {
             "current_step": None,
@@ -157,6 +238,14 @@ class ProfileAnalysisWorker:
             "status": "cancelled",
             "worker_id": None,
         })
+        self._record_event(
+            job,
+            event_key="cancelled",
+            event_type="cancelled",
+            stage="cancelled",
+            message="Análise cancelada sem alterar seu perfil",
+            progress=100,
+        )
 
     def _active_profile(self, user_id: str) -> dict[str, Any]:
         rows = self.client.request(f"profile?select=document&user_id=eq.{user_id}&limit=1")
@@ -165,6 +254,7 @@ class ProfileAnalysisWorker:
         return copy.deepcopy(document) if isinstance(document, dict) else empty_canonical_profile()
 
     def _insert_usage(self, job: dict[str, Any], usage_id: str) -> None:
+        model = get_model(str(job["model_id"]))
         identifiers = {
             "input": f"{usage_id}:input",
             "output": f"{usage_id}:output",
@@ -180,7 +270,7 @@ class ProfileAnalysisWorker:
                 "job_id": job["id"],
                 "stripe_customer_id": job["stripe_customer_id"],
                 "operation": "profile_analysis",
-                "provider": "openai",
+                "provider": model.provider if model else "unknown",
                 "requested_model": job["model_id"],
                 "model": job["model_id"],
                 "input_tokens": 0,
@@ -210,7 +300,38 @@ class ProfileAnalysisWorker:
         )
         return _single_row(rows)
 
-    def _finish_succeeded(self, job_id: str) -> None:
+    def _call_gateway_with_heartbeat(
+        self,
+        job_id: str,
+        *,
+        idempotency_key: str,
+        model: Any,
+        prompt: str,
+    ) -> Any:
+        stopped = threading.Event()
+
+        def keep_lease() -> None:
+            while not stopped.wait(self.heartbeat_interval_seconds):
+                try:
+                    self._heartbeat(job_id, 55, "Traçando seu posicionamento profissional com IA")
+                except SupabaseRestError as error:
+                    print(f"[profile-worker] heartbeat falhou job={job_id}: {error}")
+
+        heartbeat = threading.Thread(target=keep_lease, name=f"heartbeat-{job_id}", daemon=True)
+        heartbeat.start()
+        try:
+            return self.gateway.call_structured(
+                idempotency_key=idempotency_key,
+                model=model,
+                prompt=prompt,
+                schema=self.schema,
+            )
+        finally:
+            stopped.set()
+            heartbeat.join(timeout=max(1.0, self.heartbeat_interval_seconds * 2))
+
+    def _finish_succeeded(self, job: dict[str, Any]) -> None:
+        job_id = str(job["id"])
         now = _now_iso()
         self._patch_job(job_id, {
             "current_step": "Aguardando sua revisao",
@@ -221,6 +342,14 @@ class ProfileAnalysisWorker:
             "status": "succeeded",
             "worker_id": None,
         })
+        self._record_event(
+            job,
+            event_key="completed",
+            event_type="completed",
+            stage="review_ready",
+            message="Análise concluída — revise o rascunho antes de ativar",
+            progress=100,
+        )
 
     def _update_usage_after_llm(self, usage_id: str, response: Any) -> None:
         usage = response.usage
@@ -228,9 +357,11 @@ class ProfileAnalysisWorker:
             f"ai_usage_event?id=eq.{usage_id}",
             method="PATCH",
             payload={
-                "api_model": response.model,
+                "api_model": response.api_model,
                 "stripe_response_id": response.response_id or None,
                 "finish_reason": response.finish_reason,
+                "model": response.model,
+                "provider": response.provider,
                 "input_tokens": usage.input_tokens,
                 "output_tokens": usage.output_tokens,
                 "cached_tokens": usage.cached_tokens,
@@ -298,8 +429,15 @@ class ProfileAnalysisWorker:
         usage_captured = False
         try:
             if self._is_cancel_requested(job_id):
-                self._cancel(job_id)
+                self._cancel(job)
                 return
+            self._advance(
+                job,
+                event_key="worker_claimed",
+                message="Preparando uma análise segura do seu currículo",
+                progress=5,
+                stage="preparing",
+            )
             existing_analysis = self._existing_analysis(job_id)
             if existing_analysis:
                 usage_id = self._usage_id_for_job(job)
@@ -308,15 +446,27 @@ class ProfileAnalysisWorker:
                     analysis_id=str(existing_analysis["id"]),
                     feature_meter_status="pending",
                 )
-                self._finish_succeeded(job_id)
+                self._finish_succeeded(job)
                 return
-            self._heartbeat(job_id, 15, "Extraindo documento")
+            self._advance(
+                job,
+                event_key="document_extraction",
+                message="Lendo e validando o documento",
+                progress=15,
+                stage="document_extraction",
+            )
             document = self._document_for_job(job)
             if self._is_cancel_requested(job_id):
-                self._cancel(job_id)
+                self._cancel(job)
                 return
 
-            self._heartbeat(job_id, 35, "Preparando contexto")
+            self._advance(
+                job,
+                event_key="context_building",
+                message="Organizando experiências, projetos e formação",
+                progress=30,
+                stage="context_building",
+            )
             active_profile = self._active_profile(job["user_id"])
             desired_overrides = [
                 f"{item['name']}:{item['priority']}"
@@ -325,6 +475,13 @@ class ProfileAnalysisWorker:
             deterministic = apply_declared_preferences(
                 build_deterministic_draft(active_profile, [document], desired_overrides),
                 job["preferences"],
+            )
+            self._advance(
+                job,
+                event_key="skill_intent",
+                message="Separando o que você sabe do que quer usar",
+                progress=42,
+                stage="skill_intent",
             )
             prompt = build_profile_analysis_prompt(
                 deterministic_draft=deterministic,
@@ -337,21 +494,44 @@ class ProfileAnalysisWorker:
 
             usage_id = self._usage_id_for_job(job)
             usage_inserted = True
-            self._heartbeat(job_id, 50, "Analisando perfil e curriculo")
-            response = self.gateway.call_structured(
+            self._advance(
+                job,
+                event_key=f"tool:{PROFILE_ANALYSIS_TOOL_NAME}:requested",
+                event_type="tool_call",
+                message="Traçando seu posicionamento profissional com IA",
+                metadata={"model": model.id, "tool": PROFILE_ANALYSIS_TOOL_NAME},
+                progress=55,
+                stage="profile_analysis",
+            )
+            response = self._call_gateway_with_heartbeat(
+                job_id,
                 idempotency_key=f"10xvagas_profile_{usage_id}",
                 model=model,
                 prompt=prompt,
-                schema=self.schema,
             )
             self._update_usage_after_llm(usage_id, response)
             usage_captured = True
+            self._advance(
+                job,
+                event_key=f"tool:{PROFILE_ANALYSIS_TOOL_NAME}:completed",
+                event_type="tool_result",
+                message="Análise estruturada recebida e pronta para conferência",
+                metadata={"model": response.model, "tool": response.tool_name},
+                progress=76,
+                stage="evidence_review",
+            )
             validate_analysis_response(response.arguments, self.schema)
             if self._is_cancel_requested(job_id):
-                self._cancel(job_id)
+                self._cancel(job)
                 return
 
-            self._heartbeat(job_id, 85, "Preparando rascunho")
+            self._advance(
+                job,
+                event_key="draft_building",
+                message="Conferindo evidências, gaps e possíveis contradições",
+                progress=86,
+                stage="draft_building",
+            )
             draft = merge_profile_proposal(
                 deterministic,
                 response.arguments["canonical_profile_draft"],
@@ -388,7 +568,14 @@ class ProfileAnalysisWorker:
                 analysis_id=analysis["id"],
                 feature_meter_status="pending",
             )
-            self._finish_succeeded(job_id)
+            self._advance(
+                job,
+                event_key="matching_ready",
+                message="Preparando o perfil que encontrará vagas compatíveis",
+                progress=95,
+                stage="matching_ready",
+            )
+            self._finish_succeeded(job)
         except (ProfileAnalysisError, ProfileImportError, StripeGatewayError, SupabaseRestError) as error:
             if usage_inserted and not usage_captured:
                 try:
@@ -404,7 +591,7 @@ class ProfileAnalysisWorker:
                     )
                 except SupabaseRestError:
                     pass
-            self._fail(job_id, error)
+            self._fail(job, error)
         except Exception as error:  # noqa: BLE001 - fronteira do worker precisa encerrar o job
             safe_error = ProfileAnalysisError(f"Falha inesperada: {type(error).__name__}")
             if usage_inserted and not usage_captured:
@@ -421,9 +608,10 @@ class ProfileAnalysisWorker:
                     )
                 except SupabaseRestError:
                     pass
-            self._fail(job_id, safe_error)
+            self._fail(job, safe_error)
 
-    def _fail(self, job_id: str, error: Exception) -> None:
+    def _fail(self, job: dict[str, Any], error: Exception) -> None:
+        job_id = str(job["id"])
         now = _now_iso()
         try:
             self._patch_job(job_id, {
@@ -435,6 +623,15 @@ class ProfileAnalysisWorker:
                 "status": "failed",
                 "worker_id": None,
             })
+            self._record_event(
+                job,
+                event_key="failed",
+                event_type="failed",
+                stage="failed",
+                message="Não foi possível concluir esta análise",
+                progress=int(job.get("progress") or 0),
+                metadata={"error_code": type(error).__name__},
+            )
         except SupabaseRestError as update_error:
             print(f"[profile-worker] nao foi possivel encerrar job={job_id}: {update_error}")
 
@@ -467,11 +664,19 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main() -> int:
     args = build_parser().parse_args()
+    client = SupabaseRestClient.from_env()
+    worker = ProfileAnalysisWorker(client, StripeLlmGateway.from_env())
     health_server = None
     port = os.environ.get("PORT", "").strip()
     if port and not args.once:
-        health_server = start_health_server(int(port))
-    worker = ProfileAnalysisWorker(SupabaseRestClient.from_env(), StripeLlmGateway.from_env())
+        def ready() -> bool:
+            try:
+                client.request("profile_analysis_job?select=id&limit=1")
+                return True
+            except SupabaseRestError:
+                return False
+
+        health_server = start_health_server(int(port), ready)
     if args.once:
         return 0 if worker.run_once() else 3
     while True:

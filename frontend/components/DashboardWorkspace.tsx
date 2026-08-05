@@ -41,7 +41,8 @@ export function DashboardWorkspace() {
     if (state.status !== 'ready' || !state.data.pagination.hasMore || loadingMore) return
     try {
       setLoadingMore(true)
-      const next = await jobService.list({ limit: state.data.pagination.limit, offset: state.data.jobs.length })
+      const nextOffset = state.data.pagination.offset + state.data.pagination.limit
+      const next = await jobService.list({ limit: state.data.pagination.limit, offset: nextOffset })
       setState({
         status: 'ready',
         data: {

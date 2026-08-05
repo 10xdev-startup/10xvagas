@@ -2,9 +2,10 @@ import { beforeEach, describe, expect, it, jest } from '@jest/globals'
 import { supabase } from '@/database/supabase'
 import { JobModel } from '@/models/JobModel'
 
-jest.mock('@/database/supabase', () => ({ supabase: { from: jest.fn() } }))
+jest.mock('@/database/supabase', () => ({ supabase: { from: jest.fn(), rpc: jest.fn() } }))
 
 const fromMock = supabase.from as unknown as jest.Mock
+const rpcMock = supabase.rpc as unknown as jest.Mock
 
 function mockResolveRows(rows: Array<{ id: string }>): { eq: jest.Mock; gte: jest.Mock; lte: jest.Mock; limit: jest.Mock } {
   const limit = jest.fn().mockResolvedValue({ data: rows, error: null } as never)
@@ -18,6 +19,7 @@ function mockResolveRows(rows: Array<{ id: string }>): { eq: jest.Mock; gte: jes
 describe('JobModel.resolveId', () => {
   beforeEach(() => {
     fromMock.mockReset()
+    rpcMock.mockReset()
   })
 
   it('consulta a PK UUID por range indexavel e busca dois candidatos', async () => {
@@ -50,9 +52,10 @@ describe('JobModel.resolveId', () => {
 describe('JobModel.listByUser', () => {
   beforeEach(() => {
     fromMock.mockReset()
+    rpcMock.mockReset()
   })
 
-  it('restringe a consulta de matches por user_id mesmo usando service-role', async () => {
+  it('pagina o ranking global no banco e usa somente o user_id recebido da autenticacao', async () => {
     const row = {
       apply_url: null,
       company: 'Acme',
@@ -73,29 +76,37 @@ describe('JobModel.listByUser', () => {
       updated_at: '2026-08-03T12:00:00.000Z',
       workplace_type: 'hybrid',
     }
-    const jobRange = jest.fn().mockResolvedValue({ count: 1, data: [row], error: null } as never)
-    const jobOrder = jest.fn().mockReturnValue({ range: jobRange })
-    const activeEq = jest.fn().mockReturnValue({ order: jobOrder })
-    const matchIn = jest.fn().mockResolvedValue({ data: [], error: null } as never)
-    const userEq = jest.fn().mockReturnValue({ in: matchIn })
+    const rankedRows = [
+      {
+        ...row,
+        match_id: 'match-1',
+        score: 95,
+        rank: 1,
+        reasons: ['Stack alinhada'],
+        gaps: [],
+        skills: ['TypeScript'],
+        matched_at: '2026-08-03T13:00:00.000Z',
+        total_count: 125,
+      },
+    ]
+    rpcMock.mockResolvedValue({ data: { jobs: rankedRows, total: 125 }, error: null } as never)
     const sourceLimit = jest.fn().mockResolvedValue({ data: [], error: null } as never)
     const sourceOrder = jest.fn().mockReturnValue({ limit: sourceLimit })
-    fromMock.mockImplementation((table: unknown) => {
-      if (table === 'job') return { select: jest.fn().mockReturnValue({ eq: activeEq }) }
-      if (table === 'job_match') return { select: jest.fn().mockReturnValue({ eq: userEq }) }
+    fromMock.mockImplementation((_table: unknown) => {
       return { select: jest.fn().mockReturnValue({ order: sourceOrder }) }
     })
-
     await expect(JobModel.listByUser('user-1', { limit: 25, offset: 50 })).resolves.toMatchObject({
       collectedAt: row.last_seen_at,
+      jobs: [expect.objectContaining({ id: row.id, rank: 1, score: 95 })],
       sources: [],
-      total: 1,
+      total: 125,
     })
 
-    expect(activeEq).toHaveBeenCalledWith('is_active', true)
-    expect(jobRange).toHaveBeenCalledWith(50, 74)
-    expect(userEq).toHaveBeenCalledWith('user_id', 'user-1')
-    expect(matchIn).toHaveBeenCalledWith('job_id', [row.id])
+    expect(rpcMock).toHaveBeenCalledWith('list_jobs_for_user', {
+      p_limit: 25,
+      p_offset: 50,
+      p_user_id: 'user-1',
+    })
     expect(sourceOrder).toHaveBeenCalledWith('collected_at', { ascending: false })
     expect(sourceLimit).toHaveBeenCalledWith(100)
   })

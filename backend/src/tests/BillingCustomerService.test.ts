@@ -10,7 +10,7 @@ jest.mock('@/services/stripeService', () => ({
   StripeService: {
     createCustomer: jest.fn(),
     getBalance: jest.fn(),
-    retrieveCustomer: jest.fn(),
+    retrieveCustomerForUser: jest.fn(),
   },
 }))
 
@@ -19,7 +19,7 @@ describe('BillingCustomerService', () => {
 
   it('nao reaproveita Customer armazenado quando ele nao pertence a 10xVagas', async () => {
     jest.mocked(BillingModel.getCustomerId).mockResolvedValue('cus_10xdev')
-    jest.mocked(StripeService.retrieveCustomer).mockResolvedValue(null)
+    jest.mocked(StripeService.retrieveCustomerForUser).mockResolvedValue(null)
     jest.mocked(StripeService.createCustomer).mockResolvedValue({ id: 'cus_10xvagas' } as never)
 
     await expect(BillingCustomerService.getOrCreate('user-1', 'user@example.com'))
@@ -29,7 +29,7 @@ describe('BillingCustomerService', () => {
 
   it('bloqueia a criacao do job antes do upload quando o saldo acabou', async () => {
     jest.mocked(BillingModel.getCustomerId).mockResolvedValue('cus_10xvagas')
-    jest.mocked(StripeService.retrieveCustomer).mockResolvedValue({ id: 'cus_10xvagas' } as never)
+    jest.mocked(StripeService.retrieveCustomerForUser).mockResolvedValue({ id: 'cus_10xvagas' } as never)
     jest.mocked(StripeService.getBalance).mockResolvedValue({ balanceCents: 0, currency: 'BRL' })
 
     await expect(BillingCustomerService.requireAvailableCredits('user-1', 'user@example.com'))

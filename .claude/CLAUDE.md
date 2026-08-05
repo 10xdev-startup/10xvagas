@@ -219,6 +219,7 @@ Use dollar-quoting (`$$...$$`) nas strings dentro do SQL pra nao escapar aspas n
     id uuid primary key references auth.users(id) on delete cascade,
     email text not null, name text, avatar_url text,
     role text not null default 'user', status text not null default 'active',
+    stripe_customer_id text,
     onboarded_at timestamptz,
     created_at timestamptz not null default now(),
     updated_at timestamptz not null default now()
@@ -281,13 +282,17 @@ Use dollar-quoting (`$$...$$`) nas strings dentro do SQL pra nao escapar aspas n
   create or replace function public.guard_users_sensitive_columns()
   returns trigger
   language plpgsql
-  security definer
+  security invoker
   set search_path = ''
   as $$
   begin
     if auth.role() in ('anon', 'authenticated') and (
+      new.id is distinct from old.id or
+      new.email is distinct from old.email or
       new.role is distinct from old.role or
-      new.status is distinct from old.status
+      new.status is distinct from old.status or
+      new.stripe_customer_id is distinct from old.stripe_customer_id or
+      new.created_at is distinct from old.created_at
     ) then
       raise exception 'Alteracao de coluna sensivel nao permitida para este papel';
     end if;
@@ -302,10 +307,28 @@ Use dollar-quoting (`$$...$$`) nas strings dentro do SQL pra nao escapar aspas n
   ```
 
   Esse schema espelha apenas o nucleo de identidade da 10xDev. Campos de GitHub,
-  Stripe, creditos, debate, convite e compartilhamento pertencem ao dominio do
-  produto antigo e nao entram no 10xVagas. O trigger cria `public.users` no mesmo
+  debate, convite e compartilhamento pertencem ao dominio do produto antigo e nao
+  entram no 10xVagas. `stripe_customer_id` pertence ao billing isolado deste produto.
+  O trigger cria `public.users` no mesmo
   instante em que o Supabase Auth cria `auth.users`; o `supabaseMiddleware`
   continua com o upsert como fallback idempotente.
+
+### Invariantes do schema em produção
+
+- Toda tabela em `public` usa RLS; `anon` não possui grants nas tabelas do produto.
+- `authenticated` recebe apenas os grants exigidos pelas policies existentes; funções
+  `SECURITY DEFINER` de jobs, aprovação e billing são executáveis somente por
+  `service_role`.
+- `users` protege `id`, `email`, `role`, `status`, `stripe_customer_id` e `created_at`
+  contra alteração direta por usuário autenticado. O guard é `SECURITY INVOKER` para
+  que `auth.role()` preserve o papel do chamador.
+- Relações compostas garantem que job, análise, evento, usage, modelo e Customer
+  pertençam ao mesmo usuário.
+- `job.workplace_type`: `remote`, `hybrid`, `onsite`, `unknown`.
+- `job.employment_type`: `full_time`, `part_time`, `contract`, `temporary`,
+  `internship`, `other` ou `null`. Um trigger normaliza writers antigos antes dos checks.
+- O bucket `profile-documents` é privado, limitado a 8 MB e aceita somente PDF, DOCX e TXT.
+- DDL continua exclusivamente pela Management API/SQL Editor; não versionar migration SQL.
 
 ## Arquivos-chave
 

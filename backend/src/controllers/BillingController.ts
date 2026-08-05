@@ -1,6 +1,8 @@
 import type { Request, Response } from 'express'
 import type Stripe from 'stripe'
+import { getProfileAnalysisMinimumCreditsCents } from '@/config/runtime'
 import { BillingModel } from '@/models/BillingModel'
+import { CheckoutCreditGrantModel } from '@/models/CheckoutCreditGrantModel'
 import { BillingCustomerService } from '@/services/billingCustomerService'
 import { isStripeCheckoutEnabled, StripeService } from '@/services/stripeService'
 import type { CheckoutMetadata } from '@/types/billing'
@@ -32,18 +34,20 @@ export const BillingController = {
         checkoutEnabled: isStripeCheckoutEnabled(),
         currency: 'BRL',
         hasCustomer: false,
+        minimumAnalysisCreditsCents: getProfileAnalysisMinimumCreditsCents(),
         packs: await packsPromise,
       })
       return
     }
 
-    const customer = await StripeService.retrieveCustomer(customerId)
+    const customer = await StripeService.retrieveCustomerForUser(customerId, user.id)
     if (!customer) {
       sendOk(res, {
         balanceCents: 0,
         checkoutEnabled: isStripeCheckoutEnabled(),
         currency: 'BRL',
         hasCustomer: false,
+        minimumAnalysisCreditsCents: getProfileAnalysisMinimumCreditsCents(),
         packs: await packsPromise,
       })
       return
@@ -57,6 +61,7 @@ export const BillingController = {
       ...balance,
       checkoutEnabled: isStripeCheckoutEnabled(),
       hasCustomer: true,
+      minimumAnalysisCreditsCents: getProfileAnalysisMinimumCreditsCents(),
       packs,
     })
   },
@@ -103,14 +108,14 @@ export const BillingController = {
       throw new AppError(400, 'Assinatura Stripe invalida', 'INVALID_STRIPE_SIGNATURE')
     }
 
-    if (event.type !== 'checkout.session.completed') {
+    if (!['checkout.session.completed', 'checkout.session.async_payment_succeeded'].includes(event.type)) {
       sendOk(res, { received: true })
       return
     }
 
     const session = event.data.object as Stripe.Checkout.Session
     const metadata = parseMetadata(session.metadata)
-    if (!belongsToBillingNamespace(metadata)) {
+    if (!belongsToBillingNamespace(metadata) || !metadata) {
       console.warn('[BillingController] checkout ignorado por namespace', {
         eventId: event.id,
         platform: metadata?.platform ?? null,
@@ -124,20 +129,53 @@ export const BillingController = {
       return
     }
 
+    if (!session.id || session.client_reference_id !== metadata.userId) {
+      throw new AppError(422, 'Checkout Stripe nao corresponde ao usuario informado', 'CHECKOUT_USER_MISMATCH')
+    }
     const customerId = stripeObjectId(session.customer)
     const paymentIntentId = stripeObjectId(session.payment_intent)
-    if (!customerId || !paymentIntentId) {
+    const amountCents = session.amount_total ?? 0
+    if (!customerId || !paymentIntentId || amountCents <= 0) {
       throw new AppError(422, 'Checkout Stripe sem identificadores financeiros', 'INVALID_CHECKOUT_SESSION')
     }
 
-    await StripeService.grantCheckoutCredits({
-      amountCents: session.amount_total ?? 0,
+    const customer = await StripeService.retrieveCustomerForUser(customerId, metadata.userId)
+    if (!customer) {
+      throw new AppError(422, 'Customer Stripe nao pertence ao usuario da 10xVagas', 'CHECKOUT_CUSTOMER_MISMATCH')
+    }
+    const storedCustomerId = await BillingModel.getCustomerId(metadata.userId)
+    if (storedCustomerId && storedCustomerId !== customerId) {
+      throw new AppError(409, 'Usuario ja possui outro Customer da 10xVagas', 'CHECKOUT_CUSTOMER_CONFLICT')
+    }
+    if (!storedCustomerId) await BillingModel.setCustomerId(metadata.userId, customerId)
+
+    const claim = await CheckoutCreditGrantModel.claim({
+      amountCents,
+      checkoutSessionId: session.id,
       currency: session.currency ?? 'brl',
       customerId,
       paymentIntentId,
-      userId: metadata?.userId ?? null,
+      stripeEventId: event.id,
+      userId: metadata.userId,
     })
-    if (metadata?.userId) await BillingModel.setCustomerId(metadata.userId, customerId)
+    if (!claim.should_process) {
+      sendOk(res, { received: true })
+      return
+    }
+    try {
+      const transactionId = await StripeService.grantCheckoutCredits({
+        amountCents,
+        currency: session.currency ?? 'brl',
+        customerId,
+        paymentIntentId,
+        userId: metadata.userId,
+      })
+      await CheckoutCreditGrantModel.markGranted(paymentIntentId, transactionId)
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Falha desconhecida ao conceder creditos'
+      await CheckoutCreditGrantModel.releaseAfterFailure(paymentIntentId, message)
+      throw error
+    }
     sendOk(res, { received: true })
   },
 }

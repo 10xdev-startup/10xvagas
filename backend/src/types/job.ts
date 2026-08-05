@@ -27,6 +27,21 @@ export interface JobRow {
 
 export type JobListRow = Omit<JobRow, 'description'>
 
+export interface JobListRpcRow extends JobListRow {
+  match_id: string | null
+  score: number | null
+  rank: number | null
+  reasons: string[] | null
+  gaps: string[] | null
+  skills: string[] | null
+  matched_at: string | null
+}
+
+export interface JobListRpcResult {
+  jobs: JobListRpcRow[]
+  total: number
+}
+
 export interface JobMatchRow {
   user_id: string
   job_id: string

@@ -24,11 +24,12 @@ describe('profileAnalysisService', () => {
       targetRoles: ['Backend Engineer'],
     }
 
-    await profileAnalysisService.create(document, preferences)
+    await profileAnalysisService.create(document, preferences, 'gpt-5.6-sol')
 
     expect(apiClient.upload).toHaveBeenCalledWith('/profile-analyses', expect.any(FormData))
     const body = jest.mocked(apiClient.upload).mock.calls[0]?.[1]
     expect(body?.get('document')).toBe(document)
+    expect(body?.get('modelId')).toBe('gpt-5.6-sol')
     expect(body?.get('preferences')).toBe(JSON.stringify(preferences))
   })
 
