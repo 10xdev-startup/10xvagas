@@ -49,14 +49,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
   const signInWithGoogle = useCallback(async (redirectTarget?: string | null): Promise<void> => {
     const destination = getSafeAuthRedirect(redirectTarget)
     const callbackUrl = new URL('/auth/callback', window.location.origin)
-    callbackUrl.searchParams.set('redirect', destination)
+
+    document.cookie = `post_login_redirect=${encodeURIComponent(destination)}; Path=/; Max-Age=300; SameSite=Lax`
 
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: callbackUrl.toString() },
+      options: {
+        redirectTo: callbackUrl.toString(),
+        queryParams: { prompt: 'select_account' },
+      },
     })
 
-    if (error) throw error
+    if (error) {
+      document.cookie = 'post_login_redirect=; Path=/; Max-Age=0; SameSite=Lax'
+      throw error
+    }
   }, [])
 
   const signInWithEmail = useCallback(async (email: string, password: string): Promise<void> => {
