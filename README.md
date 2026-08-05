@@ -150,6 +150,11 @@ frontend, backend e o engine. O worker usa a imagem de [`engine/Dockerfile`](eng
 com `poppler-utils`, usuario nao-root e health check HTTP no Web App dedicado
 `web-engine-10xvagas`.
 
+O workflow segue o mesmo fluxo de deploy do 10xDev e do 10x-mkt: autentica no Azure,
+publica as imagens no ACR, atualiza os Web Apps e reinicia os servicos. Portas, secrets e
+demais app settings sao configurados uma vez no Azure e persistem entre deploys; nao sao
+regravados a cada execucao do workflow.
+
 O catalogo de modelos, o modelo padrao e os precos sao lidos diretamente do rate card
 ativo na Stripe. O card precisa declarar `default_profile_analysis_model` nos metadados
 e exatamente uma rate `input`, `output` e `cached` por modelo.

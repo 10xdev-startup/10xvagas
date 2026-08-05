@@ -1,75 +1,21 @@
-# Deploy Docker → Azure (Container Registry + App Service).
-# Dispara no push pra `main` e manualmente ("Run workflow").
-#
-# CONFIGURAR UMA VEZ POR PROJETO:
-#   1. Edite o bloco `env:` abaixo com os nomes dos seus recursos Azure.
-#   2. Configure os Secrets do repo (Settings → Secrets and variables → Actions):
-#      - AZURE_CLIENT_ID / AZURE_TENANT_ID / AZURE_SUBSCRIPTION_ID  (service principal)
-#      - NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY    (baked no build do front)
-#      - SUPABASE_SERVICE_ROLE_KEY                                   (runtime, nunca baked no front)
-#      - STRIPE_SECRET_KEY / STRIPE_WEBHOOK_SECRET                    (runtime do billing)
-#      - FRONTEND_URL                                                  (opcional; dominio canonico do front)
-#   3. Opcional: CORS_ORIGINS (lista separada por virgula). Sem ele, o backend
-#      libera so a URL do Web App do front. Defina quando plugar dominio proprio
-#      — precisa listar apex E www, sao origens distintas pro browser.
-#   (Dica: rode a skill /deploy-azure pro setup guiado da infra na primeira vez.)
-
 name: Deploy Docker to Azure - 10xVagas
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
   workflow_dispatch:
-
-env:
-  ACR_NAME: cr10xvagas # Azure Container Registry (so o nome, sem .azurecr.io)
-  RESOURCE_GROUP: resource-10xvagas
-  BACKEND_APP: web-backend-10xvagas # nome do Web App do backend
-  FRONTEND_APP: web-frontend-10xvagas # nome do Web App do frontend
-  ENGINE_APP: web-engine-10xvagas # worker Python dedicado
-  BACKEND_IMAGE: 10xvagas-backend
-  FRONTEND_IMAGE: 10xvagas-frontend
-  ENGINE_IMAGE: 10xvagas-engine
-  BACKEND_PUBLIC_URL: https://web-backend-10xvagas.azurewebsites.net # backend de prod (build-arg do front)
 
 jobs:
   docker-deploy:
     runs-on: ubuntu-latest
     permissions:
-      contents: read # checkout do codigo
-      id-token: write # auth OIDC no Azure
+      contents: read
+      id-token: write
 
     steps:
-      - name: Preflight — checar se o workflow foi configurado
-        run: |
-          if printf '%s ' "${{ env.ACR_NAME }}" "${{ env.RESOURCE_GROUP }}" "${{ env.BACKEND_APP }}" "${{ env.FRONTEND_APP }}" "${{ env.ENGINE_APP }}" "${{ env.BACKEND_IMAGE }}" "${{ env.FRONTEND_IMAGE }}" "${{ env.ENGINE_IMAGE }}" "${{ env.BACKEND_PUBLIC_URL }}" | grep -q 'seu-'; then
-            echo "::error::Workflow nao configurado. Edite o bloco 'env:' de .github/workflows/deploy.yml com os nomes reais dos recursos (ACR, resource group, Web Apps...) e configure os Secrets. Rode a skill /deploy-azure para o passo a passo. Abortando."
-            exit 1
-          fi
-          echo "Configuracao OK — seguindo com o deploy."
-
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-
-      - name: Quality gate
-        run: |
-          npm ci
-          npm run typecheck
-          npm run lint
-          npm test --workspace=backend -- --runInBand
-          npm test --workspace=frontend -- --runInBand
-          npm run test:engine
 
       - name: Login to Azure
         uses: azure/login@v2
@@ -79,89 +25,49 @@ jobs:
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Login to Azure Container Registry
-        run: az acr login --name ${{ env.ACR_NAME }}
+        run: az acr login --name cr10xvagas
 
-      - name: Build and push backend image
+      - name: Build and push backend Docker image
         run: |
-          docker build -f backend/Dockerfile -t ${{ env.ACR_NAME }}.azurecr.io/${{ env.BACKEND_IMAGE }}:latest .
-          docker push ${{ env.ACR_NAME }}.azurecr.io/${{ env.BACKEND_IMAGE }}:latest
+          docker build -f backend/Dockerfile -t cr10xvagas.azurecr.io/10xvagas-backend:latest .
+          docker push cr10xvagas.azurecr.io/10xvagas-backend:latest
 
-      - name: Build and push frontend image
-        # NEXT_PUBLIC_* sao baked no build (ARGs do frontend/Dockerfile).
+      - name: Build and push frontend Docker image
         run: |
           docker build \
             --build-arg NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }} \
             --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }} \
-            --build-arg NEXT_PUBLIC_API_URL=${{ env.BACKEND_PUBLIC_URL }} \
-            --build-arg NEXT_PUBLIC_APP_URL=${{ secrets.FRONTEND_URL || format('https://{0}.azurewebsites.net', env.FRONTEND_APP) }} \
-            -t ${{ env.ACR_NAME }}.azurecr.io/${{ env.FRONTEND_IMAGE }}:latest \
+            --build-arg NEXT_PUBLIC_API_URL=https://web-backend-10xvagas.azurewebsites.net \
+            --build-arg NEXT_PUBLIC_APP_URL=${{ secrets.FRONTEND_URL || 'https://web-frontend-10xvagas.azurewebsites.net' }} \
+            -t cr10xvagas.azurecr.io/10xvagas-frontend:latest \
             -f frontend/Dockerfile .
-          docker push ${{ env.ACR_NAME }}.azurecr.io/${{ env.FRONTEND_IMAGE }}:latest
+          docker push cr10xvagas.azurecr.io/10xvagas-frontend:latest
 
-      - name: Build and push engine image
+      - name: Build and push engine Docker image
         run: |
-          docker build -f engine/Dockerfile -t ${{ env.ACR_NAME }}.azurecr.io/${{ env.ENGINE_IMAGE }}:latest .
-          docker push ${{ env.ACR_NAME }}.azurecr.io/${{ env.ENGINE_IMAGE }}:latest
+          docker build -f engine/Dockerfile -t cr10xvagas.azurecr.io/10xvagas-engine:latest .
+          docker push cr10xvagas.azurecr.io/10xvagas-engine:latest
 
       - name: Deploy containers to Azure Web Apps
         run: |
           az webapp config container set \
-            --name ${{ env.BACKEND_APP }} \
-            --resource-group ${{ env.RESOURCE_GROUP }} \
-            --docker-custom-image-name ${{ env.ACR_NAME }}.azurecr.io/${{ env.BACKEND_IMAGE }}:latest
-          az webapp config container set \
-            --name ${{ env.FRONTEND_APP }} \
-            --resource-group ${{ env.RESOURCE_GROUP }} \
-            --docker-custom-image-name ${{ env.ACR_NAME }}.azurecr.io/${{ env.FRONTEND_IMAGE }}:latest
-          az webapp config container set \
-            --name ${{ env.ENGINE_APP }} \
-            --resource-group ${{ env.RESOURCE_GROUP }} \
-            --docker-custom-image-name ${{ env.ACR_NAME }}.azurecr.io/${{ env.ENGINE_IMAGE }}:latest
+            --name web-backend-10xvagas \
+            --resource-group resource-10xvagas \
+            --docker-custom-image-name cr10xvagas.azurecr.io/10xvagas-backend:latest
 
-      - name: Configure runtime settings
-        run: |
-          az webapp config appsettings set \
-            --name ${{ env.BACKEND_APP }} \
-            --resource-group ${{ env.RESOURCE_GROUP }} \
-            --settings \
-              SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }} \
-              SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }} \
-              STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY }} \
-              STRIPE_WEBHOOK_SECRET=${{ secrets.STRIPE_WEBHOOK_SECRET }} \
-              STRIPE_CHECKOUT_ENABLED=${{ vars.STRIPE_CHECKOUT_ENABLED || 'false' }} \
-              STRIPE_CREDITS_PACK_LOOKUP_KEYS=10xvagas_credits_brl_10,10xvagas_credits_brl_25,10xvagas_credits_brl_50,10xvagas_credits_brl_100 \
-              STRIPE_RATE_CARD_ID=${{ vars.STRIPE_RATE_CARD_ID }} \
-              STRIPE_LLM_GATEWAY_URL=https://llm.stripe.com \
-              PROFILE_ANALYSIS_MIN_CREDITS_CENTS=${{ vars.PROFILE_ANALYSIS_MIN_CREDITS_CENTS || '5' }} \
-              PROFILE_ANALYSIS_RATE_LIMIT_MAX=${{ vars.PROFILE_ANALYSIS_RATE_LIMIT_MAX || '10' }} \
-              CHECKOUT_RATE_LIMIT_MAX=${{ vars.CHECKOUT_RATE_LIMIT_MAX || '10' }} \
-              RATE_LIMIT_WINDOW_MS=${{ vars.RATE_LIMIT_WINDOW_MS || '900000' }} \
-              RATE_LIMIT_MAX_REQUESTS=${{ vars.RATE_LIMIT_MAX_REQUESTS || '300' }} \
-              RESPONSE_TIMEOUT_MS=${{ vars.RESPONSE_TIMEOUT_MS || '30000' }} \
-              AI_USAGE_SETTLEMENT_ENABLED=${{ vars.AI_USAGE_SETTLEMENT_ENABLED || 'false' }} \
-              FRONTEND_URL=${{ secrets.FRONTEND_URL || format('https://{0}.azurewebsites.net', env.FRONTEND_APP) }} \
-              CORS_ORIGINS=${{ secrets.CORS_ORIGINS || format('https://{0}.azurewebsites.net', env.FRONTEND_APP) }} \
-              WEBSITES_PORT=3001
-          az webapp config appsettings set \
-            --name ${{ env.FRONTEND_APP }} \
-            --resource-group ${{ env.RESOURCE_GROUP }} \
-            --settings \
-              NEXT_PUBLIC_APP_URL=${{ secrets.FRONTEND_URL || format('https://{0}.azurewebsites.net', env.FRONTEND_APP) }} \
-              WEBSITES_PORT=8080
-          az webapp config appsettings set \
-            --name ${{ env.ENGINE_APP }} \
-            --resource-group ${{ env.RESOURCE_GROUP }} \
-            --settings \
-              SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }} \
-              SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }} \
-              STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY }} \
-              STRIPE_RATE_CARD_ID=${{ vars.STRIPE_RATE_CARD_ID }} \
-              STRIPE_LLM_GATEWAY_URL=https://llm.stripe.com \
-              WEBSITES_PORT=8000
+          az webapp config container set \
+            --name web-frontend-10xvagas \
+            --resource-group resource-10xvagas \
+            --docker-custom-image-name cr10xvagas.azurecr.io/10xvagas-frontend:latest
+
+          az webapp config container set \
+            --name web-engine-10xvagas \
+            --resource-group resource-10xvagas \
+            --docker-custom-image-name cr10xvagas.azurecr.io/10xvagas-engine:latest
 
       - name: Restart Azure Web Apps
         run: |
-          az webapp restart --name ${{ env.BACKEND_APP }} --resource-group ${{ env.RESOURCE_GROUP }}
-          az webapp restart --name ${{ env.FRONTEND_APP }} --resource-group ${{ env.RESOURCE_GROUP }}
-          az webapp restart --name ${{ env.ENGINE_APP }} --resource-group ${{ env.RESOURCE_GROUP }}
-          echo "✅ Deploy concluido!"
+          az webapp restart --name web-backend-10xvagas --resource-group resource-10xvagas
+          az webapp restart --name web-frontend-10xvagas --resource-group resource-10xvagas
+          az webapp restart --name web-engine-10xvagas --resource-group resource-10xvagas
+          echo "✅ Deploy concluído!"
