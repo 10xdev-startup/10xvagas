@@ -12,25 +12,31 @@ jobs:
     permissions:
       contents: read
       id-token: write
+      packages: write
+
+    env:
+      REGISTRY: ghcr.io
+      IMAGE_NAMESPACE: 10xdev-startup
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Login to Azure
-        uses: azure/login@v2
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
         with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-
-      - name: Login to Azure Container Registry
-        run: az acr login --name cr10xvagas
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push backend Docker image
         run: |
-          docker build -f backend/Dockerfile -t cr10xvagas.azurecr.io/10xvagas-backend:latest .
-          docker push cr10xvagas.azurecr.io/10xvagas-backend:latest
+          docker build \
+            --label org.opencontainers.image.source=https://github.com/10xdev-startup/10xvagas \
+            -f backend/Dockerfile \
+            -t $REGISTRY/$IMAGE_NAMESPACE/10xvagas-backend:latest \
+            .
+          docker push $REGISTRY/$IMAGE_NAMESPACE/10xvagas-backend:latest
 
       - name: Build and push frontend Docker image
         run: |
@@ -39,31 +45,44 @@ jobs:
             --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }} \
             --build-arg NEXT_PUBLIC_API_URL=https://web-backend-10xvagas.azurewebsites.net \
             --build-arg NEXT_PUBLIC_APP_URL=${{ secrets.FRONTEND_URL || 'https://web-frontend-10xvagas.azurewebsites.net' }} \
-            -t cr10xvagas.azurecr.io/10xvagas-frontend:latest \
-            -f frontend/Dockerfile .
-          docker push cr10xvagas.azurecr.io/10xvagas-frontend:latest
+            --label org.opencontainers.image.source=https://github.com/10xdev-startup/10xvagas \
+            -t $REGISTRY/$IMAGE_NAMESPACE/10xvagas-frontend:latest \
+            -f frontend/Dockerfile \
+            .
+          docker push $REGISTRY/$IMAGE_NAMESPACE/10xvagas-frontend:latest
 
       - name: Build and push engine Docker image
         run: |
-          docker build -f engine/Dockerfile -t cr10xvagas.azurecr.io/10xvagas-engine:latest .
-          docker push cr10xvagas.azurecr.io/10xvagas-engine:latest
+          docker build \
+            --label org.opencontainers.image.source=https://github.com/10xdev-startup/10xvagas \
+            -f engine/Dockerfile \
+            -t $REGISTRY/$IMAGE_NAMESPACE/10xvagas-engine:latest \
+            .
+          docker push $REGISTRY/$IMAGE_NAMESPACE/10xvagas-engine:latest
+
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Deploy containers to Azure Web Apps
         run: |
           az webapp config container set \
             --name web-backend-10xvagas \
             --resource-group resource-10xvagas \
-            --docker-custom-image-name cr10xvagas.azurecr.io/10xvagas-backend:latest
+            --docker-custom-image-name $REGISTRY/$IMAGE_NAMESPACE/10xvagas-backend:latest
 
           az webapp config container set \
             --name web-frontend-10xvagas \
             --resource-group resource-10xvagas \
-            --docker-custom-image-name cr10xvagas.azurecr.io/10xvagas-frontend:latest
+            --docker-custom-image-name $REGISTRY/$IMAGE_NAMESPACE/10xvagas-frontend:latest
 
           az webapp config container set \
             --name web-engine-10xvagas \
             --resource-group resource-10xvagas \
-            --docker-custom-image-name cr10xvagas.azurecr.io/10xvagas-engine:latest
+            --docker-custom-image-name $REGISTRY/$IMAGE_NAMESPACE/10xvagas-engine:latest
 
       - name: Restart Azure Web Apps
         run: |
