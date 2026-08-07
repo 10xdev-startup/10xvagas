@@ -22,13 +22,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Login to Azure
-        uses: azure/login@v2
-        with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
         with:
@@ -66,6 +59,13 @@ jobs:
             -t $REGISTRY/$IMAGE_NAMESPACE/10xvagas-engine:latest \
             .
           docker push $REGISTRY/$IMAGE_NAMESPACE/10xvagas-engine:latest
+
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Deploy containers to Azure Web Apps
         run: |
